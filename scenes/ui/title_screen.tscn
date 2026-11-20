@@ -1,0 +1,87 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/title_screen.gd" id="1_title"]
+[ext_resource type="PackedScene" path="res://scenes/ui/title_backdrop.tscn" id="2_back"]
+
+[sub_resource type="Theme" id="MenuTheme"]
+default_font_size = 26
+
+[node name="TitleScreen" type="Node"]
+script = ExtResource("1_title")
+
+[node name="TitleBackdrop" parent="." instance=ExtResource("2_back")]
+
+[node name="UI" type="Control" parent="."]
+theme = SubResource("MenuTheme")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Scrim" type="ColorRect" parent="UI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.5)
+
+[node name="Fade" type="ColorRect" parent="UI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="TitleBox" type="CenterContainer" parent="UI"]
+anchor_right = 1.0
+anchor_bottom = 0.4
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="UI/TitleBox"]
+modulate = Color(0.96, 0.93, 0.82, 1)
+theme_override_font_sizes/font_size = 76
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 14
+horizontal_alignment = 1
+
+[node name="MenuBox" type="CenterContainer" parent="UI"]
+anchor_top = 0.56
+anchor_right = 1.0
+anchor_bottom = 0.96
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Menu" type="VBoxContainer" parent="UI/MenuBox"]
+theme_override_constants/separation = 12
+
+[node name="Start" type="Button" parent="UI/MenuBox/Menu"]
+custom_minimum_size = Vector2(300, 0)
+size_flags_horizontal = 4
+text = "Start"
+
+[node name="Option" type="Button" parent="UI/MenuBox/Menu"]
+custom_minimum_size = Vector2(300, 0)
+size_flags_horizontal = 4
+text = "Option"
+
+[node name="Credit" type="Button" parent="UI/MenuBox/Menu"]
+custom_minimum_size = Vector2(300, 0)
+size_flags_horizontal = 4
+text = "Credit"
+
+[node name="Hint" type="Label" parent="UI/MenuBox/Menu"]
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 6
+size_flags_horizontal = 4
+text = "Chọn bằng phím lên xuống, Enter để bắt đầu"
+horizontal_alignment = 1
