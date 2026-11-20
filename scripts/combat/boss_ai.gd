@@ -65,7 +65,9 @@ func tick(player_pos: Vector3, self_pos: Vector3) -> void:
 
 
 func report_damage(hp: int, max_hp: int) -> void:
-	if not _switch_requested and _phase_switch_due(hp, max_hp):
+	# `attack != SWITCH` closes the window where a hit during the in-flight switch
+	# re-armed a second switch: phase only reaches 2 when the first one completes.
+	if not _switch_requested and attack != Attack.SWITCH and _phase_switch_due(hp, max_hp):
 		_switch_requested = true
 
 

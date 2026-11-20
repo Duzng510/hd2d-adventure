@@ -1,10 +1,10 @@
 {
   "verdict": "E1-E5 PASSED",
-  "seconds": 58,
+  "seconds": 41,
   "evidence": {
     "E5.3": {
       "ok": true,
-      "label": "E5.3 10 chu ky headless full wave flow (wins=10 max_wave=3 ticks=11531)",
+      "label": "E5.3 10 chu ky headless full wave flow (wins=10 max_wave=3 ticks=11561)",
       "source": "t018_cycles"
     },
     "E1.1": {
@@ -79,7 +79,7 @@
     },
     "E5.1": {
       "ok": true,
-      "label": "E5.1 3 runs played inside tick budget (runs=3 ticks=3361)",
+      "label": "E5.1 3 runs played inside tick budget (runs=3 ticks=3370)",
       "source": "t023_flow"
     },
     "E5.2": {
@@ -98,7 +98,7 @@
         "reason": "2 checks",
         "checks": 2,
         "summary": "",
-        "seconds": 20
+        "seconds": 10
       },
       {
         "name": "t019_swarm",
@@ -145,7 +145,7 @@
         "ok": true,
         "reason": "34 checks",
         "checks": 34,
-        "summary": "runs=3 checks=34 failures=0 ticks=3361",
+        "summary": "runs=3 checks=34 failures=0 ticks=3370",
         "seconds": 3
       }
     ],
@@ -158,7 +158,7 @@
         "proves": null,
         "ok": true,
         "reason": "red on E5.3, flow.reset_state",
-        "seconds": 18
+        "seconds": 9
       },
       {
         "name": "t019_swarm",
@@ -220,7 +220,7 @@
         "proves": "E5.4",
         "ok": true,
         "reason": "red on E5.2, E5.1, E5.2, E5.2",
-        "seconds": 2
+        "seconds": 3
       }
     ],
     "failures": []
