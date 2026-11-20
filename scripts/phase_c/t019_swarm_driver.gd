@@ -77,6 +77,9 @@ func _run() -> void:
 			_combat.aim_override_point = _encounter.nearest_alive_position()
 			if _combat.attack_phase() == AttackState.Phase.NONE:
 				_combat.debug_request_attack()
+		if state == WaveKernel.State.WON:
+			# T-022: a win hands control back to the player, so the harness resets.
+			_encounter.reset_run()
 	var completed := _encounter.runs_completed >= TARGET_RUNS
 	print("runs=%d wins=%d swarms=%d grunts=%d reset_checks=%s ticks=%d" % [
 		_encounter.runs_completed, _encounter.wins, swarms_seen, grunts_seen,

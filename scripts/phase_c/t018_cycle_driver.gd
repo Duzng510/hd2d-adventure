@@ -64,6 +64,9 @@ func _run() -> void:
 			if _combat.attack_phase() == AttackState.Phase.NONE:
 				_combat.debug_request_attack()
 			max_wave_seen = maxi(max_wave_seen, _encounter.kernel.wave_index + 1)
+		if state == WaveKernel.State.WON:
+			# T-022: a win hands control back to the player, so the harness resets.
+			_encounter.reset_run()
 	var completed := _encounter.runs_completed >= TARGET_RUNS
 	print("runs=%d wins=%d losses=%d max_wave=%d reset_checks=%s ticks=%d" % [
 		_encounter.runs_completed, _encounter.wins, _encounter.losses,
