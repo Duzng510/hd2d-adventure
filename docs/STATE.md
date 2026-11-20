@@ -1,8 +1,8 @@
 # PROJECT STATE
-Cập nhật: 2026-11-20 (Project Day 2) | Commit: 45c7760 (T-013) | Branch: `phase-b/t014-gate-evidence` (T-014)
+Cập nhật: 2026-11-20 (Project Day 2) | Commit: 7873893 (T-014) | Branch: `phase-b/t015-l4-gates` (T-015)
 
 ## Phase hiện tại
-Phase B — Combat Prototype (bắt đầu 2026-11-20). Phase A thoát theo **D-009 waiver**: gates 1–5 đạt (D-007/D-008 Accepted; lưới pixel khóa, anchor_dev = sprite_dev = 0, residual 0 px); L4 playtest Phase A **Not Run** — cảm nhận gom vào L4 Phase B cùng build. **T-008 DONE**: gate definitions Phase B (B1–B7, D1–D3) user xác nhận 2026-11-20; COMBAT_SPEC APPROVED; `combat_tuning.tres` + physics layers 3–6 + InputMap combat sẵn sàng; D-010 mouse snapshot. **T-009 DONE**: kernel thuần logic (AttackState/InputBuffer/DodgeState/Health/HitRegistry) + test 92 checks; negative control fail đúng 3 check duplicate (exit 1). **T-010 DONE**: player combat (hitbox/hurtbox Area3D, mouse-snapshot hitbox, swing arc, hitstop, combat log CSV, F1 overlay) — log in-scene 1 hit/1 damage cho 1 swing, hit trong active window, hitstop +3 tick; 5 ảnh evidence đã xem. **T-011 DONE**: Grunt AI thuần logic (idle→chase→telegraph→active→recovery, alert event, telegraph lock-in) + node (chase, telegraph visual, damage player, death); test 16 checks; capture 6 ảnh: telegraph 20 frame đúng tuning, 1 hit/attack, player→Grunt 1 hit/1 damage, player death log. **T-012 DONE**: encounter loop (thắng/thua/reset R sau 120 tick, 10 run liên tiếp headless) + HUD HP trạng thái; 4 ảnh HUD đã xem; capture có `encounter_win` (3 đòn, frame 90) → reset 210 → `encounter_lose` 542. **T-013**: Playtest Brief sẵn sàng (`docs/phase-b/PLAYTEST_BRIEF.md`) — chờ user L4. **T-014 DONE**: automated gate B2/B3/D Passed với negative controls (B2: 12 swing 1 hit/damage, kernel 98 checks; B3: 10 trial alert 0 tick, telegraph 1.292, wall_min 0.350; D1–D3 đủ evidence); B4.1/4.2 đạt, B4.3 chờ L4; ẩn placeholder telegraph quanh player trước L4.
+Phase B — Combat Prototype (bắt đầu 2026-11-20). Phase A thoát theo **D-009 waiver**: gates 1–5 đạt (D-007/D-008 Accepted; lưới pixel khóa, anchor_dev = sprite_dev = 0, residual 0 px); L4 playtest Phase A **Not Run** — cảm nhận gom vào L4 Phase B cùng build. **T-008 DONE**: gate definitions Phase B (B1–B7, D1–D3) user xác nhận 2026-11-20; COMBAT_SPEC APPROVED; `combat_tuning.tres` + physics layers 3–6 + InputMap combat sẵn sàng; D-010 mouse snapshot. **T-009 DONE**: kernel thuần logic (AttackState/InputBuffer/DodgeState/Health/HitRegistry) + test 92 checks; negative control fail đúng 3 check duplicate (exit 1). **T-010 DONE**: player combat (hitbox/hurtbox Area3D, mouse-snapshot hitbox, swing arc, hitstop, combat log CSV, F1 overlay) — log in-scene 1 hit/1 damage cho 1 swing, hit trong active window, hitstop +3 tick; 5 ảnh evidence đã xem. **T-011 DONE**: Grunt AI thuần logic (idle→chase→telegraph→active→recovery, alert event, telegraph lock-in) + node (chase, telegraph visual, damage player, death); test 16 checks; capture 6 ảnh: telegraph 20 frame đúng tuning, 1 hit/attack, player→Grunt 1 hit/1 damage, player death log. **T-012 DONE**: encounter loop (thắng/thua/reset R sau 120 tick, 10 run liên tiếp headless) + HUD HP trạng thái; 4 ảnh HUD đã xem; capture có `encounter_win` (3 đòn, frame 90) → reset 210 → `encounter_lose` 542. **T-013**: Playtest Brief sẵn sàng (`docs/phase-b/PLAYTEST_BRIEF.md`) — chờ user L4. **T-014 DONE**: automated gate B2/B3/D Passed với negative controls (B2: 12 swing 1 hit/damage, kernel 98 checks; B3: 10 trial alert 0 tick, telegraph 1.292, wall_min 0.350; D1–D3 đủ evidence); B4.1/4.2 đạt, B4.3 chờ L4; ẩn placeholder telegraph quanh player trước L4. **T-015 DONE**: L4 session 13 run liền (11 W hợp lệ, 2 run user cố ý đứng yên bị loại, 12 reset, 0 SCRIPT ERROR) + dodge run riêng (20 Space, W) — B1/B4/B5/B6 Passed; B7 Incomplete vì B7.3 **Not Run** (chưa test spam thuần, user chưa muốn thêm cơ chế); Phase B exit chưa đạt.
 
 ## Build: chạy được? (có/không) — cách chạy
 Có (scene load được). Scene chính: `res://scenes/phase_a/phase_a_playground.tscn`. **Chạy không cần mở editor: `run.bat` ở root, hoặc VSCode Ctrl+Shift+B (task "godot: run game", `.vscode/tasks.json`)**; phím trong game: WASD di chuyển, chuột aim, LMB đánh (combo 3 hit), Space né, R reset encounter, F1 hitbox/hurtbox, P đổi persp/ortho, L frame log. HUD: HP player/Grunt + trạng thái (ĐANG ĐÁNH / THẮNG / THUA). L2 Passed: headless `--quit-after 120`, EXIT=0, không lỗi. Visual G1–G3 + lighting đã xem thật (Vulkan 1.4.323 Forward+ / Intel UHD, 1280×720).
@@ -57,6 +57,11 @@ MVS-AC1…8 (GDD mục 0, PROPOSED): chưa kiểm chứng — chưa có build ch
   - Hitbox/hurtbox `Area3D` layers 3/5 (player) + TrainingDummy layer 6; hitbox xoay theo **mouse snapshot** (D-010), damage query bằng shape/transform thật gated active tick; swing arc + dummy flash; hitstop 3 tick qua `CombatDirector` (max policy); combat log CSV `user://combat_log.csv` (in stdout + flush).
   - Evidence `docs/phase-b/evidence/t010/`: 5 PNG đã xem (D1 off/on, startup/active/recovery/end) + CSV: 1 hit + 1 damage/1 swing, hit frame 27 trong active 26–32 (hitstop kéo dài 3 tick).
   - Validation: L1 9 script exit 0; L2 playground exit 0; L3 kernel 97 checks exit 0, negative exit 1; capture renderer thật exit 0.
+- T-015 L4 results (`docs/phase-b/evidence/b5`, `b7`):
+  - Session 13 run: 11 W/2 L (2 L do user cố ý đứng yên → loại khỏi B5), 12 reset, engine log 0 SCRIPT ERROR; B5 Passed.
+  - User chấm gộp Resp 4/5, Read 4/5 (11 run, mean 4.0); a/b/c 11/11 mỗi câu (33/33); x/n = 5/5 hit trong run hợp lệ (user báo hiểu 19/19 toàn session) → B1/B4/B6 Passed.
+  - Dodge run riêng: 20 Space, 3 hit gây ra, 2 hit nhận, W → B7.1 Passed; 11 run thắng áp sát → B7.2 Passed (user-reported).
+  - B7.3 Not Run: chưa test spam thuần; 11 run không Space nhưng user báo né bằng WASD; chưa thêm cơ chế theo ý user. Phase B exit chưa đạt (xem OPERATIONAL_DEFINITIONS §14).
 - T-014 automated gate evidence (`scripts/phase_b/b2_swing_driver.gd`, `b3_trial_driver.gd`, `b3_capture_driver.gd`):
   - B2.2: 12 swing trong scene, Grunt reset mỗi swing → mỗi `attack_id` đúng 1 hit + 1 damage target 1 (value 10); negative tắt registry → 3 hit/damage mỗi swing, exit 1. `evidence/b2/` (CSV + summary).
   - B2.1: kernel test thêm `Health(30)` reset mỗi swing → 98 checks exit 0; negative fail 4/98 (duplicate + HP reset), exit 1.
@@ -75,10 +80,10 @@ MVS-AC1…8 (GDD mục 0, PROPOSED): chưa kiểm chứng — chưa có build ch
   - L1 2 script + L3 test 16 checks + L2 playground exit 0; commit f8288c4 + 943a691.
 
 ## Đang làm (≤2)
-- T-013: `docs/phase-b/PLAYTEST_BRIEF.md` đã xong (build fd3a031, phím, 10-run protocol, mẫu báo cáo, đường dẫn CSV) — **chờ user chạy L4 10 encounter** rồi chuyển báo cáo thành task + tuning 1 tham số/lần.
+- (trống — T-015 DONE; chờ quyết định B7.3: test spam thuần + cơ chế, hoặc waiver Phase B)
 
 ## Next (3–5)
-- Chấm gate Phase B còn lại (B1/B4.3/B5/B6/B7) từ báo cáo L4; B2/B3/D đã Passed, B4 chờ B4.3 | Dep: T-013, user
+- B7.3: test spam thuần (chỉ attack, không né/di chuyển) → nếu thắng mọi run thì Fail + đúng một cơ chế (GDD 6.8 mục 7), hoặc waiver Phase B (MP 8.6) | Dep: user
 - Duyệt MVS-AC1…8 + đặt ngưỡng MVS-AC2 (không chặn Phase B) | Dep: user
 
 ## Later (backlog theo phase)
@@ -93,6 +98,7 @@ Phase C stretch (extended encounter, GDD mục 12) → Phase D MVS (field Verdan
 - (T-012) FPS combat chưa đo thật: số fps trên ảnh capture là artifact `--fixed-fps`; đo ở L4.
 - (T-014) AI chase không pathfind: bị tường chặn đứng (không xuyên — B3.3 Passed); xem xét mức ảnh hưởng khi L4.
 - (T-014) Đã ẩn `Player/Telegraph` placeholder Phase A (luôn hiện quanh player) — chỉ visual, không đổi logic/hitbox.
+- (T-015) B7.3 chưa test spam thuần: 11 run thắng không Space (user báo né WASD), run spam ~150 frame vs dodge run 1009 frame — rủi ro spam vẫn thắng; cần test riêng trước khi Passed B7/exit Phase B.
 - (Môi trường) Chuyển branch bằng editor (ví dụ về `main` không có script combat) làm `.godot/global_script_class_cache.cfg` mất class_name → game báo Parse Error hàng loạt. Chạy `--headless --path . --import` một lần sau khi chuyển branch; không phải lỗi gameplay.
 - (Phase A, D-009) L4 playtest build Phase A **Not Run** (được waiver thoát phase); gom vào L4 Phase B trên cùng build.
 - Môi trường (có trước): `_console.exe` wrapper hỏng — dùng inner exe (AGENTS.md).
@@ -110,8 +116,8 @@ Phase C stretch (extended encounter, GDD mục 12) → Phase D MVS (field Verdan
 - **(G3, đánh đổi) Fade làm vật che ghostly** (mất cảm giác đặc); cần user chốt + cân nhắc outline khi fade. Ray đơn tâm player có thể sót che một phần.
 
 ## DONE gần đây (≤5)
+- T-015 | L4 session + chấm gate còn lại | DONE — 11 run hợp lệ (2 idle loại), 12 reset, 0 SCRIPT ERROR; Resp/Read 4/5, a/b/c 33/33, x/n 5/5; dodge run 20 Space W; B1/B4/B5/B6 Passed, B7.3 Not Run.
+- T-013 | Playtest Brief + L4 10-encounter protocol | DONE — brief + mẫu báo cáo + log CSV; session user chơi 13 run liền; ghi nhận 2 run đứng yên chủ đích.
 - T-014 | Automated gate evidence B2/B3/D + kernel HP-reset + ẩn placeholder telegraph | DONE — B2 12 swing 1 hit/damage (negative exit 1); B3 10 trial alert 0 tick, telegraph 1.292, wall 0.350 (negative exit 1); B4.1 20 frame; D1–D3 đủ; ảnh B3 đã xem.
 - T-012 | Encounter loop win/lose/reset + HUD + 10 run liên tiếp | DONE — cycles `runs=10 losses=10 reset_checks=true` exit 0 (negative exit 1); 4 ảnh HUD đã xem; win/reset/lose log đúng; L1/L2/capture xanh.
 - T-011 | Grunt AI + telegraph + player damage/death | DONE — 16 checks exit 0 (negative exit 1); telegraph 20 frame từ log; 1 hit/attack; player→Grunt 1 hit; death log; 6 ảnh đã xem.
-- T-010 | Player combat: mouse-snapshot hitbox/hurtbox, swing arc, hitstop, combat log CSV, F1 overlay | DONE — log in-scene 1 hit/1 damage (active window), hitstop 3 tick (active_end 32 vs 29), 5 ảnh đã xem; L1/L2/L3 xanh.
-- T-009 | Combat kernel thuần logic + test fail-first | DONE — 92 checks exit 0 (nay 98 sau B2.1 T-014); negative duplicate exit 1; ranh giới frame/combo/buffer/iframe đúng spec.
