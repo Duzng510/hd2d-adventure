@@ -38,7 +38,6 @@ var _next_target_id: int = 10
 
 
 func _ready() -> void:
-	process_priority = -5
 	_player = get_node(player_path)
 	_combat = _player.get_node("PlayerCombat")
 	_director = get_node(director_path)
