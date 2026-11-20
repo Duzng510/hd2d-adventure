@@ -5,6 +5,10 @@ extends Node3D
 
 @export var log_path: String = "user://combat_log.csv"
 
+## Emitted for every logged combat event. Read-only tap for the L4 probe
+## (T-025); nothing in gameplay listens to it, so it cannot change behaviour.
+signal event_logged(entity: StringName, event_name: StringName, attack_id: int, target_id: int, value: int)
+
 var sim_frame: int = 0
 var frozen_tick: bool = false
 ## Hitstop ticks seen so far: a frozen tick advances the clock but no fighter
@@ -48,6 +52,7 @@ func log_event(entity: StringName, event_name: StringName, attack_id: int = 0, t
 	record[key] = entry
 	attack_records["%s:%d" % [entity, attack_id]] = record
 	log.event(sim_frame, entity, event_name, attack_id, target_id, value)
+	event_logged.emit(entity, event_name, attack_id, target_id, value)
 
 
 func attack_event_count(entity: StringName, attack_id: int, event_name: StringName) -> int:

@@ -100,6 +100,9 @@ func _test_phase_flip(negative: bool) -> void:
 	var to_active := _advance(ai, BAND, GruntAI.State.ACTIVE, 80)
 	_check(to_active == _tuning.boss_phase_switch_frames, "switch telegraph 45 frames")
 	_check(ai.phase == 1, "phase stays 1 during switch")
+	# A player hit inside the in-flight switch window used to re-arm a second
+	# SWITCH (phase is still 1 until the first one completes).
+	ai.report_damage(120, 300)
 	var flips := _drain_flips(ai, BAND, 200)
 	_check(flips == 1, "boss_phase flips once")
 	_check(ai.phase == 2, "phase 2 after switch")

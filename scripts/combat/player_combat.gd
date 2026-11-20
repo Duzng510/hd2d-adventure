@@ -270,6 +270,16 @@ func is_invulnerable() -> bool:
 	return _dodge.is_invulnerable()
 
 
+## Read-only probes for the L4 capture rig (T-025): could the player have dodged
+## at this instant, and were they locked in a swing.
+func dodge_available() -> bool:
+	return _can_dodge()
+
+
+func is_attacking() -> bool:
+	return _attack.is_attacking()
+
+
 func is_dead() -> bool:
 	return health.is_dead()
 

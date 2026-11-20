@@ -106,6 +106,15 @@ Quy tắc:
 - Swing miss vẫn log `active_end`; không bắt buộc `hit`/`damage`. Enemy attack có `attack_id` riêng cho **mỗi** telegraph/attack instance.
 - Diagnostic input→action_start = số tick engine-side (chỉ diagnostic; không đại diện input-to-display — GDD 6.4).
 
+### 9.1 L4 capture rig (T-025) — schema `user://l4_probe.csv`
+
+- `CombatDirector` emit thêm `event_logged(entity, event_name, attack_id, target_id, value)` **sau khi** ghi dòng CSV. Đây là tap read-only: không consumer nào trong gameplay nối vào nó, nên không đổi hành vi.
+- `L4Probe` ghi file **thứ hai** (không đổi schema §9): header `frame,kind,hp,x,z,nearobs,dodge,swing,boss_hp,boss_state,atk,src,dist,dreact,moved,dmg,near_role,near_dist,fps,note`; join với combat log bằng `sim_frame` (clock chung, không reset khi R).
+- Kinds: `v` banner (schema/sample rate) · `s` sample 10 Hz (hp, toạ độ, `nearobs` 1 chạm cover/1,5 m/2_open, `dodge` có bấm được không, `swing`, HP + state boss, enemy gần nhất) · `h` player ăn đòn · `d` player chết (kèm sát thủ + HP boss còn lại) · `p` một PNG `user://l4_death_N.png` đã ghi.
+- `dreact` = `(sim_frame − frozen_ticks) − (telegraph_start_frame − frozen_at_start)` = số frame telegraph **thực sự còn** sau khi trừ hitstop; `note` giữ `raw=`/`frozen=`. Projectile tra telegraph của entity `ranged` (cùng `attack_id`).
+- Giới hạn phải đọc kèm: `attack_id` đánh số theo **từng instance**, nên khi >1 enemy cùng vai trò đang active thì `dist` là ước lượng nearest-candidate và `note` mang `ambig=N`; `fps` = 0 ở 60 frame đầu và vô nghĩa khi chạy `--fixed-fps` (artifact capture, như known issue cũ).
+- Nghiệm thu của rig ở `scenes/phase_c/play_arena.tscn` (`-- auto`, `-- auto passive`, `-- auto negative`), lệnh chấm: `node tools/score_l4.mjs <combat_log.csv> --probe <l4_probe.csv>`.
+
 ## 10. Readability & feedback
 
 - Telegraph: tín hiệu dưới enemy (màu/scale/vòng cảnh báo) thấy rõ trước active; screenshot L3.
