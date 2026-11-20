@@ -35,8 +35,12 @@ Dự kiến (chỉ tạo khi task cần): `scenes/`, `scripts/`, `assets/` (+ `A
 |---|---|---|
 | 1 | world | Sàn, tường, vật cản tĩnh (`StaticBody3D`) |
 | 2 | player | Player `CharacterBody3D` |
+| 3 | player_attack | Hitbox `Area3D` của player (Light Attack) |
+| 4 | enemy_attack | Hitbox `Area3D` của enemy (đòn có telegraph) |
+| 5 | player_hurtbox | Hurtbox `Area3D` của player |
+| 6 | enemy_hurtbox | Hurtbox `Area3D` của enemy |
 
-Mask: player mask = 1 (chạm world); world mask = 0. Hitbox/hurtbox layers sẽ thêm ở Phase B. Thêm layer phải cập nhật bảng này và mọi consumer (D-005 Proposed).
+Mask: player mask = 1 (chạm world); world mask = 0; hitbox mask = layer hurtbox đối phương (player_attack→enemy_hurtbox, enemy_attack→player_hurtbox); hurtbox mask = 0. Thêm layer phải cập nhật bảng này và mọi consumer (D-005 Proposed).
 
 ## Chạy & test (headless)
 
