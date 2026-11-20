@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/title_screen.tscn" id="1_title"]
+[ext_resource type="Script" path="res://scripts/ui/capture_title.gd" id="2_drv"]
+
+[node name="CaptureTitle" type="Node"]
+
+[node name="TitleScreen" parent="." instance=ExtResource("1_title")]
+
+[node name="CaptureTitleDriver" type="Node" parent="."]
+script = ExtResource("2_drv")
