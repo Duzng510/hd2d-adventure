@@ -45,3 +45,15 @@ extends Resource
 @export var swarm_active_frames: int = 4
 @export var swarm_recovery_frames: int = 20
 @export var swarm_damage: int = 5
+
+@export_group("Ranged")
+@export var ranged_max_hp: int = 30
+@export var ranged_min_range: float = 3.5
+@export var ranged_max_range: float = 7.0
+@export var ranged_approach_speed: float = 2.0
+@export var ranged_telegraph_frames: int = 24
+@export var ranged_active_frames: int = 4
+@export var ranged_recovery_frames: int = 30
+@export var ranged_damage: int = 8
+@export var ranged_projectile_speed: float = 6.0
+@export var ranged_projectile_lifetime_frames: int = 120

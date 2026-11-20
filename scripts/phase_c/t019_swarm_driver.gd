@@ -9,7 +9,9 @@ extends Node
 
 const TARGET_RUNS := 3
 const MAX_TICKS := 15000
-const STAGING := Vector3(0.0, 0.0, 0.5)
+## Wave 2 kites, so the harness follows the nearest alive enemy instead of
+## pinning one point; the 0.8 m offset keeps the target inside light_reach (1.4).
+const FOLLOW_OFFSET := 0.8
 
 var _encounter: WaveEncounter
 var _combat: PlayerCombat
@@ -65,9 +67,12 @@ func _run() -> void:
 						grunts += 1
 				swarms_seen = maxi(swarms_seen, swarms)
 				grunts_seen = maxi(grunts_seen, grunts)
-			if _player.global_position.distance_to(STAGING) > 3.0:
-				_player.global_position = STAGING
-				_player.velocity = Vector3.ZERO
+			if _encounter.alive_count() > 0:
+				var target := _encounter.nearest_alive_position()
+				var staging := target + Vector3(FOLLOW_OFFSET if target.x < 0.0 else -FOLLOW_OFFSET, 0.0, 0.0)
+				if _player.global_position.distance_to(staging) > 0.4:
+					_player.global_position = staging
+					_player.velocity = Vector3.ZERO
 			_combat.health.hp = _combat.health.max_hp
 			_combat.aim_override_point = _encounter.nearest_alive_position()
 			if _combat.attack_phase() == AttackState.Phase.NONE:

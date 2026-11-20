@@ -14,6 +14,7 @@
 [ext_resource type="Resource" path="res://scripts/combat/combat_tuning.tres" id="12_tuning"]
 [ext_resource type="PackedScene" path="res://scenes/combat/grunt.tscn" id="13_grunt"]
 [ext_resource type="PackedScene" path="res://scenes/combat/swarm.tscn" id="14_swarm"]
+[ext_resource type="PackedScene" path="res://scenes/combat/ranged.tscn" id="15_ranged"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
 sky_top_color = Color(0.35, 0.45, 0.6, 1)
@@ -261,8 +262,8 @@ tuning = ExtResource("12_tuning")
 [node name="WaveEncounter" type="Node" parent="."]
 script = ExtResource("10_wave")
 tuning = ExtResource("12_tuning")
-enemy_scenes = {"grunt": ExtResource("13_grunt"), "swarm": ExtResource("14_swarm")}
-wave_roles = [["grunt", "grunt", "swarm", "swarm", "swarm"], ["grunt", "grunt", "grunt", "grunt"], ["grunt"]]
+enemy_scenes = {"grunt": ExtResource("13_grunt"), "swarm": ExtResource("14_swarm"), "ranged": ExtResource("15_ranged")}
+wave_roles = [["grunt", "grunt", "swarm", "swarm", "swarm"], ["swarm", "swarm", "ranged", "ranged"], ["grunt"]]
 
 [node name="CameraRig" type="Camera3D" parent="."]
 script = ExtResource("3_cam")

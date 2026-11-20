@@ -11,7 +11,7 @@ signal run_ended(won: bool)
 @export var enemy_scenes: Dictionary = {}
 @export var wave_roles: Array = [
 	["grunt", "grunt", "swarm", "swarm", "swarm"],
-	["grunt", "grunt", "grunt", "grunt"],
+	["swarm", "swarm", "ranged", "ranged"],
 	["grunt"],
 ]
 @export var wave_pause_frames: int = 60
@@ -102,6 +102,8 @@ func reset_run() -> void:
 	for enemy in _enemies:
 		enemy.queue_free()
 	_enemies.clear()
+	for projectile in get_tree().get_nodes_in_group(&"enemy_projectile"):
+		projectile.queue_free()
 	_player.global_position = player_spawn
 	_player.velocity = Vector3.ZERO
 	_player.facing = 1

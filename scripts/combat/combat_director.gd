@@ -9,6 +9,7 @@ var sim_frame: int = 0
 var frozen_tick: bool = false
 var hitstop := HitstopController.new()
 var log := CombatLog.new()
+var event_counts: Dictionary = {}
 
 
 func _ready() -> void:
@@ -26,6 +27,8 @@ func request_hitstop(frames: int) -> void:
 
 
 func log_event(entity: StringName, event_name: StringName, attack_id: int = 0, target_id: int = 0, value: int = 0) -> void:
+	var key := String(event_name)
+	event_counts[key] = int(event_counts.get(key, 0)) + 1
 	log.event(sim_frame, entity, event_name, attack_id, target_id, value)
 
 

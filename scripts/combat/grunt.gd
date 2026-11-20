@@ -27,21 +27,15 @@ var _body_material: StandardMaterial3D
 @onready var _body_mesh: MeshInstance3D = $MeshInstance3D
 @onready var _telegraph: MeshInstance3D = $Telegraph
 @onready var _hurtbox: Area3D = $Hurtbox
-@onready var _hitbox: Area3D = $AttackHitbox
-@onready var _hitbox_shape: CollisionShape3D = $AttackHitbox/CollisionShape3D
+@onready var _hitbox: Area3D = get_node_or_null("AttackHitbox") as Area3D
+@onready var _hitbox_shape: CollisionShape3D = get_node_or_null("AttackHitbox/CollisionShape3D") as CollisionShape3D
 
 
 func _ready() -> void:
 	_player = get_node(player_path)
 	_player_combat = _player.get_node("PlayerCombat")
 	_director = get_node(director_path)
-	_ai = GruntAI.new(
-		_detect_range(),
-		_attack_range(),
-		_telegraph_frames(),
-		_active_frames(),
-		_recovery_frames()
-	)
+	_ai = _create_ai()
 	health = Health.new(_max_hp())
 	_body_material = StandardMaterial3D.new()
 	_body_material.albedo_color = _base_color()
@@ -54,8 +48,24 @@ func _ready() -> void:
 	telegraph_material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	telegraph_material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	_telegraph.material_override = telegraph_material
-	_hitbox.monitoring = false
+	if _hitbox != null:
+		_hitbox.monitoring = false
 	_previous_state = _ai.state
+
+
+func _create_ai() -> GruntAI:
+	return GruntAI.new(
+		_detect_range(),
+		_attack_range(),
+		_telegraph_frames(),
+		_active_frames(),
+		_recovery_frames()
+	)
+
+
+## Overridable hook fired once when the attack enters its active window.
+func _on_active_start() -> void:
+	pass
 
 
 func _physics_process(_delta: float) -> void:
@@ -121,7 +131,8 @@ func _handle_events() -> void:
 			_body_material.albedo_color = _base_color()
 		GruntAI.State.TELEGRAPH:
 			_attack_id += 1
-			_hitbox.rotation.y = atan2(-_ai.attack_dir.z, _ai.attack_dir.x)
+			if _hitbox != null:
+				_hitbox.rotation.y = atan2(-_ai.attack_dir.z, _ai.attack_dir.x)
 			_telegraph.visible = true
 			_body_material.albedo_color = _telegraph_color()
 			_director.log_event(_log_entity(), &"telegraph_start", _attack_id)
@@ -130,6 +141,7 @@ func _handle_events() -> void:
 			_body_material.albedo_color = _base_color()
 			_director.log_event(_log_entity(), &"telegraph_end", _attack_id)
 			_director.log_event(_log_entity(), &"active_start", _attack_id)
+			_on_active_start()
 		GruntAI.State.RECOVERY:
 			_director.log_event(_log_entity(), &"active_end", _attack_id)
 	_previous_state = _ai.state
@@ -144,6 +156,8 @@ func _move() -> void:
 
 
 func _resolve_damage() -> void:
+	if _hitbox == null or _hitbox_shape == null:
+		return
 	if _player_combat.is_dead():
 		return
 	var shape := _hitbox_shape.shape
