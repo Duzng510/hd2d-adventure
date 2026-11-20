@@ -79,5 +79,12 @@ func _run() -> void:
 		and reset_checks_ok
 		and ticks < MAX_TICKS
 	)
+	# Evidence ids consumed by tools/run_evidence.mjs.
+	print("CHECK %s E5.3 %d chu ky headless full wave flow (wins=%d max_wave=%d ticks=%d)" % [
+		"PASS" if ok else "FAIL", TARGET_RUNS, _encounter.wins, max_wave_seen, ticks,
+	])
+	print("CHECK %s flow.reset_state hp/spawn/wave/enemies chuan sau moi reset" % [
+		"PASS" if reset_checks_ok else "FAIL",
+	])
 	print("PASS t018_cycles: %d runs, full wave flow" % TARGET_RUNS if ok else "FAIL t018_cycles")
 	get_tree().quit(0 if ok else 1)

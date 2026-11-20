@@ -70,7 +70,7 @@ Lịch sử quyết định. Quyết định bị thay thế đánh **Superseded
 - **Reason:** User chọn bằng văn bản ngày 2026-11-20: **"Ortho + giữ FIXED_Y"** sau evidence T-006. Đo thật: persp không thể integer px/texel toàn cục (4.458 tại player, 4.062 tại điểm xa hơn) và camera snap không giảm shimmer persp (residual 18013→18681 px); ortho khóa được world crawl (T-006 −95%, T-007 = 0).
 - **Alternatives considered:** Perspective + chỉnh pixel_size — loại vì px/texel đổi theo độ sâu; SubViewport low-res + integer upscale — loại vì mất chi tiết diorama 3D của HD-2D; ortho + full billboard cho texel vuông — user chọn giữ FIXED_Y thay thế.
 - **Consequences:** Mật độ texel cố định **4.000 × 2.499 px** (aspect 0.6247) là chủ đích, không phải lỗi (D-008). Mất chiều sâu phối cảnh của diorama; cảm nhận cuối cùng đánh giá ở L4. Follow smoothing >0 vẫn để dành tinh chỉnh feel sau playtest.
-- **Evidence:** T-006/T-007, OPERATIONAL_DEFINITIONS §12–13, `evidence/pixel/`, `evidence/pixel_t007/`.
+- **Evidence:** T-006/T-007, OPERATIONAL_DEFINITIONS §12–13, `docs/archive/phase-a/evidence/pixel/` (T-006), `evidence/pixel_t007/` (T-007).
 
 ## D-008 · 2026-11-20 · Technical · Accepted
 

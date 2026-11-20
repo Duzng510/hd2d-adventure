@@ -1,0 +1,4 @@
+# Harnesses rewrite evidence logs with LF bytes. Without -text, core.autocrlf
+# flags them modified after every run even when the content is byte-identical.
+docs/**/evidence/**/*.csv -text
+docs/**/evidence/**/*.txt -text

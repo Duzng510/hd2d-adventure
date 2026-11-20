@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/phase_c/grove_arena.tscn" id="1_arena"]
+[ext_resource type="Script" path="res://scripts/phase_c/t023_onehit_driver.gd" id="2_drv"]
+
+[node name="RunT023Onehit" type="Node"]
+
+[node name="GroveArena" parent="." instance=ExtResource("1_arena")]
+
+[node name="T023OnehitDriver" type="Node" parent="."]
+script = ExtResource("2_drv")
