@@ -97,13 +97,13 @@ Rubric chủ quan một người, sample nhỏ → tín hiệu ban đầu, khôn
 
 | Gate | Trạng thái | Evidence ref | Ngày |
 |---|---|---|---|
-| B1 Responsiveness | Not Run | brief T-013, chờ L4 | — |
+| B1 Responsiveness | Passed | `evidence/b5/`: 11 run hợp lệ, user chấm gộp 4/5 (mean 4.0, không làm tròn) | 2026-11-20 |
 | B2 One-hit-per-swing | Passed | B2.1 kernel 98 checks (100 swing, target HP reset); B2.2 `evidence/b2/` 12 swing; B2.3 registry-off negative exit 1 | 2026-11-20 |
 | B3 Enemy AI ranges | Passed | `evidence/b3/`: 10 trial alert 0 tick, telegraph 1.292 ≤ 1.3, wall_min 0.350, player_min 3.100; negative telegraph 3.96 exit 1 | 2026-11-20 |
-| B4 Telegraph | Incomplete | B4.1 t011 CSV 20 frame; B4.2 t011 ảnh telegraph; B4.3 chờ L4 | 2026-11-20 |
-| B5 10 runs | Not Run | chờ L4 | — |
-| B6 Readability | Not Run | B6.3 ảnh t011; B6.1/B6.2 chờ L4 | — |
-| B7 Two approaches | Not Run | chờ L4 | — |
+| B4 Telegraph | Passed | B4.1 t011 CSV 20 frame; B4.2 t011 ảnh telegraph; B4.3 x/n = 5/5 hit trong 11 run hợp lệ (user báo hiểu 19/19 toàn session) | 2026-11-20 |
+| B5 10 runs | Passed | `evidence/b5/`: 13 run liền, 11 hợp lệ (2 run đứng yên chủ đích loại), 12 reset, 0 SCRIPT ERROR | 2026-11-20 |
+| B6 Readability | Passed | User chấm gộp 4/5 (mean 4.0); a/b/c = 11/11 mỗi câu (33/33); B6.3 ảnh t011 | 2026-11-20 |
+| B7 Two approaches | Incomplete | B7.1 `evidence/b7/` dodge run 20 Space, W; B7.2 11 run thắng áp sát/đánh gần; **B7.3 Not Run** (chưa test spam thuần; user chưa muốn thêm cơ chế) | 2026-11-20 |
 | D1–D3 Debug | Passed | D1 t010 ảnh off/on; D2 CSV có `alert`; D3 t012 cycles + capture | 2026-11-20 |
 
 ## 12. Thứ tự, overlap & exit
@@ -125,3 +125,17 @@ Harness: `scenes/phase_b/run_b2_swings.tscn`, `run_b3_trials.tscn`, `capture_b3.
 - **B4.1**: từ `evidence/t011/combat_log.csv`: attack 2–7 có `active_start − telegraph_start = 20`; attack 1 = 23 do hitstop 3 khi player trúng đòn; min 20 ≥ `grunt_telegraph_frames`. **B4.2**: ảnh `t011/telegraph.png` + `telegraph_hitbox_overlay.png` đã xem.
 - **D2**: CSV có `alert` (`t011` frame 1; `b3` 10 alert). **D1**: `t010/d1_off.png`/`d1_on.png` đã xem. **D3**: `t012` cycles (R/auto reset + `encounter_reset`) và capture HUD.
 - Trước L4, node `Player/Telegraph` (placeholder Phase A luôn hiện quanh player) đã được ẩn (`visible=false`) để tránh nhầm với telegraph của Grunt; không ảnh hưởng logic/hitbox.
+
+## 14. Evidence L4 — session 2026-11-20
+
+Build: nhánh `phase-b/t014-gate-evidence` (nền T-012 `fd3a031`). Session liền 17:30–17:45, CSV `evidence/b5/combat_log_session.csv` (498 dòng), engine log `evidence/b5/engine_log.txt` (0 SCRIPT ERROR).
+
+- **Run:** 13 run hoàn tất — 11 W, 2 L. Hai run L (7–8) do user **cố ý đứng yên** để Grunt đánh chết → loại khỏi 10 run hợp lệ (B5 còn 11 run). 12 `encounter_reset` (value 1…12) sau mỗi run.
+- **B5.1/B5.3:** 11/11 run hợp lệ; reset có log; run kế tiếp bắt đầu từ trạng thái chuẩn (HP/HP Grunt đầy; log `encounter_reset`). B5.2: không SCRIPT ERROR trong engine log session.
+- **B1:** user chấm gộp **4/5** cho 11 run (rubric §9). Mean 4.0 ≥ 3. *Deviation:* không chấm riêng từng run; ghi rõ user-reported gộp. Diagnostic engine-side: `input_light`→`action_start` 0 tick ×35, 1 tick ×9, 2 tick ×2 trên 47 cặp (~0–33 ms; 4 input không tạo action trong 6 tick do recovery/buffer).
+- **B6:** readability gộp **4/5** (mean 4.0 ≥ 3); a/b/c = **11/11 mỗi câu** (33/33 ≥ 24). B6.3 ảnh t011 đã xem.
+- **B4.3:** 11 run hợp lệ có **n=5** hit nhận; user báo hiểu lý do **19/19** cho toàn session (gồm 14 hit ở 2 run đứng yên, loại khỏi B5) → x/n = 5/5 = 100% cho run hợp lệ.
+- **B7.1:** session riêng `evidence/b7/combat_log_dodge_run.csv`: 20 `input_dodge` (Space), 6 lần attack, 3 hit gây ra/2 hit nhận, **W** frame 1009 → dodge-rồi-phản-công hợp lệ.
+- **B7.2:** 11 run thắng có 3–6 attack, 0–1 hit nhận, đánh gần; user xác nhận có run né bằng WASD; đủ một run áp sát/chen recovery (user-reported).
+- **B7.3: Not Run.** Chưa có test spam thuần (chỉ giữ attack, không né/di chuyển/chờ). 11 run không có Space nhưng user báo có né bằng WASD → không phải spam thuần; user chưa muốn thêm cơ chế. **Rủi ro:** spam có thể vẫn thắng (run spam ~150 frame vs dodge run 1009 frame); cần test riêng trước khi tuyên bố B7 Passed.
+- **Phase B exit: chưa đạt** — B7 Incomplete (B7.3); các gate còn lại Passed/đủ điều kiện. Cần test B7.3 + (nếu Fail) đúng một cơ chế, hoặc waiver MP 8.6.
