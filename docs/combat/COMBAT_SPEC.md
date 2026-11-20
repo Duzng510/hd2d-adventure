@@ -86,7 +86,7 @@ Quy tắc:
 - Hitbox: `Area3D` monitoring, mask = hurtbox đối phương. Hurtbox: `Area3D` passive, mask = 0.
 - Player hitbox: origin tại player, hướng = snapshot aim, reach `light_reach`; shape cụ thể đặt trong scene. F1 overlay vẽ từ **chính shape/transform của Area3D** (không vẽ xấp xỉ).
 - Damage hợp lệ khi **đồng thời**: attack đang trong active tick, hitbox overlap hurtbox đối phương, target không trong i-frame, attack instance chưa ghi nhận target trong HitRegistry. Không dựa vào animation hay signal collision đơn thuần.
-- Hitbox bật/tắt đúng boundary §4.
+- Hitbox bật/tắt đúng boundary §4. Damage query dùng direct space-state với **chính shape/transform** của hitbox và layer mask; `Area3D` giữ layer semantics + overlay F1; query chỉ chạy trong active tick.
 
 ## 9. Combat log (MP 6.4)
 

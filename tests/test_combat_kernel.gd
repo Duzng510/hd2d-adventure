@@ -19,6 +19,7 @@ func _initialize() -> void:
 	_test_input_buffer(tuning)
 	_test_dodge()
 	_test_health()
+	_test_hitstop()
 	_test_hit_registry()
 	if _failures == 0:
 		print("PASS test_combat_kernel: %d checks" % _checks)
@@ -116,6 +117,19 @@ func _test_health() -> void:
 	_check(health.apply_damage(5) == 0, "no damage after death")
 	health.reset()
 	_check(health.hp == 100 and not health.is_dead(), "reset restores hp")
+
+
+func _test_hitstop() -> void:
+	var stop := HitstopController.new()
+	stop.request(3)
+	_check(stop.tick(), "hitstop frozen tick 1")
+	stop.request(2)
+	_check(stop.tick(), "overlap policy keeps max remaining")
+	_check(stop.tick(), "hitstop frozen tick 3")
+	_check(not stop.tick(), "hitstop released after 3 ticks")
+	stop.request(1)
+	stop.reset()
+	_check(not stop.tick(), "reset clears hitstop")
 
 
 func _test_hit_registry() -> void:
