@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://b8b4mv252ce5h"
+
+[deps]
+
+files=["res://docs/phase-b/evidence/b3/combat_log_trials.entity.translation", "res://docs/phase-b/evidence/b3/combat_log_trials.event.translation", "res://docs/phase-b/evidence/b3/combat_log_trials.attack.translation", "res://docs/phase-b/evidence/b3/combat_log_trials.target.translation", "res://docs/phase-b/evidence/b3/combat_log_trials.value.translation"]
+
+source_file="res://docs/phase-b/evidence/b3/combat_log_trials.csv"
+dest_files=["res://docs/phase-b/evidence/b3/combat_log_trials.entity.translation", "res://docs/phase-b/evidence/b3/combat_log_trials.event.translation", "res://docs/phase-b/evidence/b3/combat_log_trials.attack.translation", "res://docs/phase-b/evidence/b3/combat_log_trials.target.translation", "res://docs/phase-b/evidence/b3/combat_log_trials.value.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

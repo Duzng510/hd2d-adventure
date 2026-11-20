@@ -158,6 +158,7 @@ alpha_cut = 1
 texture_filter = 1
 
 [node name="Telegraph" type="MeshInstance3D" parent="Player"]
+visible = false
 transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0.03, -1.2)
 mesh = SubResource("TelegraphMesh")
 

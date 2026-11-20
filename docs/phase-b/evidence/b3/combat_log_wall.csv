@@ -1,0 +1,2 @@
+frame,entity,event,attack_id,target_id,value
+1,grunt,alert,0,0,0
