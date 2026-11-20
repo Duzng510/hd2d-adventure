@@ -87,7 +87,7 @@ Sau prototype, ghi vào `docs/DECISIONS.md`: kiến trúc không gian (XZ hay 3D
 | G3.3 | Pass | `g3_3_roof_before.png` / `_after.png` + csv | Trước: Roof che toàn bộ player/telegraph; sau fade: cả hai đọc rõ |
 | Gate 4 | Pass | `docs/phase-a/ART_SPEC.md` | User xác nhận bằng văn bản 2026-11-20; đủ scale/canvas/pivot/hướng/pixel density/footprint |
 | Mục 5 | Pass | `docs/DECISIONS.md` D-006, D-007, D-008 | Đã ghi không gian/projection/camera/aim/lỗi visual; D-007+D-008 vẫn Proposed chờ user chốt |
-| Pixel-grid & shimmer (ngoài gate) | Measured | `evidence/pixel/` + mục 12 | T-006: đo 6 config, metric residual biết FAIL trước; không phải gate Phase A |
+| Pixel-grid & shimmer (ngoài gate) | Measured | `docs/archive/phase-a/evidence/pixel/` + mục 12 | T-006: đo 6 config, metric residual biết FAIL trước; không phải gate Phase A |
 
 ## 7. Trình tự thực hiện (theo GDD mục 12)
 
@@ -172,7 +172,7 @@ Offset = `camera.unproject_position(aim)` so với mouse → 0 mọi điểm: ma
 
 ## 12. Kết quả đo pixel-grid + shimmer (2026-11-20, T-006, AI-observed)
 
-**Điều kiện:** Godot 4.7.2.stable, Vulkan 1.4.323 Forward+, Intel UHD, 1280×720, `--fixed-fps 60`; scene `scenes/phase_a/capture_pixel.tscn` (instance playground + driver). Player chạy phải 4 u/s, 24 frame mỗi config, 6 config. Bằng chứng: `evidence/pixel/` (18 PNG đã xem thật + `pixel_log.csv`, 144 dòng). Math: `tests/test_pixel_grid.gd` PASS 17 checks; negative control `-- negative` FAIL exit 1 (fixture sai "texel vuông" bị bắt).
+**Điều kiện:** Godot 4.7.2.stable, Vulkan 1.4.323 Forward+, Intel UHD, 1280×720, `--fixed-fps 60`; scene `scenes/phase_a/capture_pixel.tscn` (instance playground + driver). Player chạy phải 4 u/s, 24 frame mỗi config, 6 config. Bằng chứng: `docs/archive/phase-a/evidence/pixel/` (18 PNG đã xem thật + `pixel_log.csv`, 144 dòng). Math: `tests/test_pixel_grid.gd` PASS 17 checks; negative control `-- negative` FAIL exit 1 (fixture sai "texel vuông" bị bắt).
 
 **Metric shimmer (residual):** giữa 2 frame liên tiếp, tịnh tiến frame B theo shift màn hình của điểm world cố định `ANCHOR (6,0,−2)` làm tròn về integer px, rồi diff với frame A; đếm pixel lệch > 8/255. Loại vùng HUD (0,0,1024,64) và hộp player ±180 px → residual chỉ đo **world tĩnh**. Ảnh `<config>_residual.png` = phần lệch ×4. **Metric chứng minh biết FAIL trước:** nosnap cho 7.406–18.013 px, snap cho 285–347 px; ảnh nosnap sáng rõ các đường lưới, ảnh snap lưới đen hoàn toàn.
 

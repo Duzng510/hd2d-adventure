@@ -18,7 +18,7 @@
 ## 3. Pixel density & luật pixel-grid
 
 - 1 texel = 0.05 world unit (pixel_size 0.05).
-- **Đo thật T-006 (2026-11-20, `evidence/pixel/`, OPERATIONAL_DEFINITIONS §12):** persp FOV35 = **4.458 × 2.785 px/texel**; ortho size 10 = 3.600 × 2.249; ortho size 9 = 4.000 × 2.499. **Aspect mọi config = 0.6247** (texel bị nén dọc do billboard FIXED_Y + camera nghiêng 51.34°) → chưa thỏa luật "1 texel = 1 px vuông". Ước lượng "≈1.5 px/texel" ghi trước đây là sai, đã thay bằng số đo.
+- **Đo thật T-006 (2026-11-20, `docs/archive/phase-a/evidence/pixel/`, OPERATIONAL_DEFINITIONS §12):** persp FOV35 = **4.458 × 2.785 px/texel**; ortho size 10 = 3.600 × 2.249; ortho size 9 = 4.000 × 2.499. **Aspect mọi config = 0.6247** (texel bị nén dọc do billboard FIXED_Y + camera nghiêng 51.34°) → chưa thỏa luật "1 texel = 1 px vuông". Ước lượng "≈1.5 px/texel" ghi trước đây là sai, đã thay bằng số đo.
 - Integer scale chỉ khả thi với **ortho** (size = H × pixel_size / scale: 720p → 36/18/12/9 cho 1/2/3/4 px mỗi texel). Persp có px/texel đổi theo độ sâu → không integer toàn cục.
 - Camera snap (`snap_to_pixel`) khóa world crawl với ortho (residual −95%); thêm visual snap của sprite (`visual_snap`, T-007) khóa cả sprite: `anchor_dev` = `sprite_dev` = 0.0000, residual 0 px. **Gói D-008 Accepted** (user chọn "Ortho + giữ FIXED_Y" 2026-11-20): luật pixel-grid nay là **mật độ texel cố định 4.000 × 2.499 px**, không yêu cầu texel vuông.
 - Import: texture code-gen `ImageTexture` (không asset ngoài, không import settings ngoài); palette chung trong `PlaceholderTextures.PALETTE`.
