@@ -1,8 +1,8 @@
 # PROJECT STATE
-Cập nhật: 2026-11-20 (Project Day 2) | Commit: e4d819e (base main) | Branch: `phase-a/t006-pixel-grid` (T-006)
+Cập nhật: 2026-11-20 (Project Day 2) | Commit: 52f5b5c (T-007) | Branch: `phase-b/t008-combat-definitions` (T-008)
 
 ## Phase hiện tại
-Phase A — Visual & Camera Prototype. G1–G3 pass; Gate 4 user xác nhận; **D-007/D-008 Accepted (T-007): ortho scale 4 + camera snap + sprite visual snap + FIXED_Y; lưới pixel khóa cả world lẫn sprite (anchor_dev = sprite_dev = 0, residual 0 px)**. Gate 1–5 đủ điều kiện thoát Phase A; còn L4 playtest feel + user duyệt chuyển Phase B.
+Phase B — Combat Prototype (bắt đầu 2026-11-20). Phase A thoát theo **D-009 waiver**: gates 1–5 đạt (D-007/D-008 Accepted; lưới pixel khóa, anchor_dev = sprite_dev = 0, residual 0 px); L4 playtest Phase A **Not Run** — cảm nhận gom vào L4 Phase B cùng build. T-008: định nghĩa vận hành gate Phase B (**chờ user xác nhận**) + COMBAT_SPEC + `combat_tuning.tres` + physics layers 3–6 + InputMap combat.
 
 ## Build: chạy được? (có/không) — cách chạy
 Có (scene load được). Scene chính: `res://scenes/phase_a/phase_a_playground.tscn`. **Chạy không cần mở editor: `run.bat` ở root, hoặc VSCode Ctrl+Shift+B (task "godot: run game", `.vscode/tasks.json`)**; phím trong game: WASD di chuyển, chuột aim, P đổi persp/ortho, L frame log. L2 Passed: headless `--quit-after 120`, EXIT=0, không lỗi. Visual G1–G3 + lighting đã xem thật (Vulkan 1.4.323 Forward+ / Intel UHD, 1280×720).
@@ -47,22 +47,26 @@ MVS-AC1…8 (GDD mục 0, PROPOSED): chưa kiểm chứng — chưa có build ch
   - Kết quả: config đủ gói `anchor_dev = sprite_dev = 0.0000`, residual 0 px; thiếu visual snap sprite crawl 0.3334 → metric fail-first. OPERATIONAL_DEFINITIONS §13. L1 3 script + L2 + L3 exit 0, capture exit 0.
 
 ## Đang làm (≤2)
-- (trống — chờ L4 playtest + user duyệt thoát Phase A)
+- T-008 | Gate definitions Phase B + COMBAT_SPEC + tuning resource + physics layers 3–6 | IMPLEMENTED — chờ user xác nhận định nghĩa gate | AC: user xác nhận trước khi chấm; L1/L3 xanh | Dep: —
 
 ## Next (3–5)
-- L4 human playtest feel build Phase A (run.bat / Ctrl+Shift+B; WASD di chuyển, chuột aim, P đổi persp/ortho, L frame log) | Dep: user chơi
-- User duyệt thoát Phase A sang Phase B combat prototype (gate 1–5 đã đủ; thiếu L4 thì áp waiver Master Prompt 8.6) | Dep: user
-- Duyệt MVS-AC1…8 + đặt ngưỡng MVS-AC2 | Dep: user
-- (tuỳ chọn) Dọn 2 dòng cũ trong AGENTS.md ("Chưa có main scene", danh sách "Hiện có") | cần preview+y/n riêng
+- T-009 combat kernel (attack timeline/combo window/buffer/dodge i-frame/health/hit registry) + fail-first tests | Dep: T-008
+- T-010 player combat (hitbox/hurtbox, swing visual, hit-stop, combat log CSV, F1 debug hitbox) | Dep: T-009
+- T-011 Grunt AI (detect→approach→telegraph ≥18 frame) + player damage/death | Dep: T-009
+- T-012 encounter manager (win/lose/reset R, 10 run liên tiếp, HUD HP, FPS combat) | Dep: T-010, T-011
+- T-013 Playtest Brief + L4 Phase B (10 encounter, rubric MP 9) + tuning 1 tham số/lần | Dep: T-012, user
+- Duyệt MVS-AC1…8 + đặt ngưỡng MVS-AC2 (không chặn Phase B) | Dep: user
 
 ## Later (backlog theo phase)
-Phase B combat prototype (GDD 6.8) → Phase D MVS (field Verdant Frontier + dungeon 2–3 phòng + reward). Phase C là stretch, không chặn MVS. Stretch 15–30 phút sau MVS.
+Phase C stretch (extended encounter, GDD mục 12) → Phase D MVS (field Verdant Frontier + dungeon 2–3 phòng + reward). Phase C không chặn MVS. Stretch 15–30 phút sau MVS.
 
 ## Chờ quyết định & Blockers
+- Định nghĩa vận hành gate Phase B (`docs/phase-b/OPERATIONAL_DEFINITIONS.md`) PROPOSED — cần user xác nhận **trước khi** đánh giá gate.
 - MVS-AC1…8 đang PROPOSED — chờ user duyệt/sửa.
 - Ngưỡng pass/fail playtest MVS-AC2 chưa đặt (GDD: lần đầu chỉ tạo baseline).
 
 ## Known issues
+- (Phase A, D-009) L4 playtest build Phase A **Not Run** (được waiver thoát phase); gom vào L4 Phase B trên cùng build.
 - Môi trường (có trước): `_console.exe` wrapper hỏng — dùng inner exe (AGENTS.md).
 - `quit()` trong SceneTree script không dừng ngay; phải dùng if/else một quit (đã ghi AGENTS.md).
 - **(G1) Ambient/shadow đen tuyệt đối: ĐÃ SỬA 2026-11-20 (T-004).** Nguyên nhân: `ambient_light_source=2` (COLOR) với `ambient_light_color` mặc định đen → đổi sang 3 (SKY). Xác nhận bằng `evidence/lighting/after_center.png` (mặt khuất hết đen).

@@ -10,10 +10,11 @@ Lịch sử quyết định. Quyết định bị thay thế đánh **Superseded
 | D-002 | 2026-11-20 | Technical | Godot 4.4+ (khóa 4.7.2.stable) + GDScript | Accepted |
 | D-003 | 2026-11-20 | Technical | Input bàn phím + chuột, gamepad DEFERRED | Accepted |
 | D-004 | 2026-11-20 | Technical | Renderer Forward+ làm baseline | Proposed |
-| D-005 | 2026-11-20 | Technical | Physics layers: 1=world, 2=player | Proposed |
+| D-005 | 2026-11-20 | Technical | Physics layers: 1=world, 2=player, 3–6 combat (Phase B) | Proposed |
 | D-006 | 2026-11-20 | Technical | Gameplay XZ-plane + aim ground y=0 + occlusion fade 0.25 | Accepted |
 | D-007 | 2026-11-20 | Technical | Projection: ortho texel_scale 4 + camera snap (persp giữ qua P để so sánh) | Accepted |
 | D-008 | 2026-11-20 | Technical | Khóa pixel-grid: ortho integer scale + camera snap + sprite visual snap; giữ FIXED_Y, mật độ texel cố định | Accepted |
+| D-009 | 2026-11-20 | Workflow | Waiver thoát Phase A khi L4 Not Run (user duyệt) | Accepted |
 
 ---
 
@@ -47,10 +48,10 @@ Lịch sử quyết định. Quyết định bị thay thế đánh **Superseded
 
 ## D-005 · 2026-11-20 · Technical · Proposed
 
-- **Decision:** Physics layers Phase A: 1 = world (sàn/tường/vật cản tĩnh), 2 = player body. Player mask = world; world mask = 0.
-- **Reason:** Collision đầu tiên xuất hiện ở T-002; Master Prompt 6.3 yêu cầu bảng layer/mask trong AGENTS.md.
-- **Alternatives considered:** Layer riêng cho hitbox/hurtbox — chưa cần, để Phase B khi combat xuất hiện.
-- **Consequences:** Thêm layer phải cập nhật bảng AGENTS.md và mọi consumer.
+- **Decision:** Physics layers: 1 = world (sàn/tường/vật cản tĩnh), 2 = player body; Phase B (T-008) bổ sung 3 = player_attack, 4 = enemy_attack (hitbox `Area3D`), 5 = player_hurtbox, 6 = enemy_hurtbox. Player mask = world; world mask = 0; hitbox mask = layer hurtbox đối phương; hurtbox mask = 0.
+- **Reason:** Collision đầu tiên xuất hiện ở T-002; Master Prompt 6.3 yêu cầu bảng layer/mask trong AGENTS.md; hitbox/hurtbox cần ở Phase B.
+- **Alternatives considered:** Layer riêng cho hitbox/hurtbox — đã bổ sung ở Phase B (3–6); ShapeCast thủ công — loại vì Area3D chuẩn Godot, debug vẽ được (F1).
+- **Consequences:** Thêm layer phải cập nhật bảng AGENTS.md và mọi consumer (bảng layer authoritative nằm ở AGENTS.md).
 
 ## D-006 · 2026-11-20 · Technical · Accepted
 
@@ -73,3 +74,11 @@ Lịch sử quyết định. Quyết định bị thay thế đánh **Superseded
 - **Reason:** User chốt "Ortho + giữ FIXED_Y" ngày 2026-11-20. Đo T-006 cho thấy thiếu phần nào luật vỡ phần đó; T-007 chứng minh đủ 3 phần kỹ thuật thì `anchor_dev` = `sprite_dev` = 0.0000 suốt 24 frame và residual 0 px. Texel vuông bị loại vì phải đổi cách đặt sprite (full billboard nghiêng theo camera, ảnh hưởng bóng/đổ bóng) — user ưu tiên sprite đứng thẳng của diorama.
 - **Alternatives considered:** Full billboard / mặt phẳng nghiêng khớp pitch cho texel vuông — user không chọn; chấp nhận crawl — loại vì phá luật pixel-grid; SubViewport low-res — xem D-007.
 - **Consequences:** (1)(2)(3) implement ở T-007 và là mặc định của scene; visual snap dịch sprite ≤0.5 px màn hình (~0.004 u), foot pivot vẫn chạm đất (ảnh T-007 đã xem). Hàng dọc texel vẫn lẻ px (2.499) nhưng **hằng số** nên không crawl. Asset hàng loạt hết chặn về mặt pixel; vẫn chờ chốt bộ hướng sprite + palette (ART_SPEC §6).
+
+## D-009 · 2026-11-20 · Workflow · Accepted
+
+- **Decision:** Cho phép chuyển Phase A → Phase B khi L4 human playtest của build Phase A chưa chạy (Not Run).
+- **Reason:** User duyệt bằng văn bản ngày 2026-11-20: "ok push branch hiện tại và tạo branch mới và duyệt thoát Phase A, lên plan Phase B đi". Phase A gates 1–5 đạt: G1–G3 trên renderer thật (ảnh đã xem), Gate 4 Art Spec user xác nhận, Gate 5 DECISIONS đủ (D-006/D-007/D-008 Accepted). L4 không nằm trong gate bắt buộc của GDD Phase A; cảm nhận camera/movement/pixel sẽ thu trong L4 Phase B trên cùng build.
+- **Alternatives considered:** Chạy L4 Phase A trước khi sang B — user bỏ qua để không chặn combat prototype; ở lại Phase A chờ playtest — bị loại.
+- **Consequences:** L4 Phase A giữ nguyên **Not Run** (không thành Passed). Rủi ro chấp nhận: feel camera/movement chưa được người chơi xác nhận; giảm thiểu bằng L4 Phase B (build tích lũy) và tinh chỉnh theo playtest.
+- **Scope:** Chỉ áp dụng cho bước chuyển Phase A→B; không miễn gate nào của Phase B; MVS-AC1…8 vẫn chờ user duyệt riêng.

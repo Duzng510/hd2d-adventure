@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="CombatTuning" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/combat_tuning.gd" id="1_tuning"]
+
+[resource]
+script = ExtResource("1_tuning")
+light_startup_frames = 4
+light_active_frames = 3
+light_recovery_frames = 10
+combo_window_frames = 10
+light_damage = 10
+light_reach = 1.4
+dodge_iframe_frames = 10
+dodge_total_frames = 22
+dodge_speed = 7.0
+input_buffer_frames = 6
+hitstop_frames = 3
+player_max_hp = 100
+grunt_max_hp = 30
+grunt_detect_range = 6.0
+grunt_approach_speed = 2.5
+grunt_attack_range = 1.3
+grunt_telegraph_frames = 20
+grunt_active_frames = 3
+grunt_recovery_frames = 18
+grunt_damage = 15
