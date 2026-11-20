@@ -13,7 +13,12 @@ var _failures: Array[String] = []
 
 func _initialize() -> void:
 	var negative := OS.get_cmdline_user_args().has("negative")
-	var tuning: CombatTuning = (load(TUNING_PATH) as CombatTuning).duplicate() as CombatTuning
+	var tuning := load(TUNING_PATH) as CombatTuning
+	if tuning == null:
+		print("FAIL test_swarm_tuning: cannot load tuning")
+		quit(1)
+		return
+	tuning = tuning.duplicate() as CombatTuning
 	if negative:
 		tuning.swarm_telegraph_frames = 10
 	_check(tuning.swarm_max_hp == 20, "swarm hp 20")
