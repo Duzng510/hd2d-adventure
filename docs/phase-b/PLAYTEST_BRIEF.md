@@ -8,6 +8,8 @@
 
 Chạy `run.bat` ở root repo (double-click), hoặc VSCode `Ctrl+Shift+B` (task "godot: run game"). Không cần mở editor.
 
+Nếu game báo hàng loạt `Parse Error: Identifier "..." not declared` sau khi chuyển branch: global class cache đang cũ (bị editor quét trên branch không có script combat). Chạy một lần `<GODOT> --headless --path . --import` rồi mở lại game; không phải lỗi gameplay.
+
 | Phím | Tác dụng |
 |---|---|
 | WASD | Di chuyển |

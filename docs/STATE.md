@@ -85,6 +85,7 @@ Phase C stretch (extended encounter, GDD mục 12) → Phase D MVS (field Verdan
 ## Known issues
 - (T-011) Grunt body `collision_layer = 0` → player có thể đi xuyên Grunt; chưa đổi mask player (D-005) — đánh giá ở L4.
 - (T-012) FPS combat chưa đo thật: số fps trên ảnh capture là artifact `--fixed-fps`; đo ở L4.
+- (Môi trường) Chuyển branch bằng editor (ví dụ về `main` không có script combat) làm `.godot/global_script_class_cache.cfg` mất class_name → game báo Parse Error hàng loạt. Chạy `--headless --path . --import` một lần sau khi chuyển branch; không phải lỗi gameplay.
 - (Phase A, D-009) L4 playtest build Phase A **Not Run** (được waiver thoát phase); gom vào L4 Phase B trên cùng build.
 - Môi trường (có trước): `_console.exe` wrapper hỏng — dùng inner exe (AGENTS.md).
 - `quit()` trong SceneTree script không dừng ngay; phải dùng if/else một quit (đã ghi AGENTS.md).
