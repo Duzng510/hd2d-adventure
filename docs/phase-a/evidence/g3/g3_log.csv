@@ -1,0 +1,8 @@
+tag,phase,active_fades
+g3_1_near,before,0
+g3_1_near,after,1
+g3_2_wall,before,0
+g3_2_wall,after,2
+g3_3_roof,before,0
+g3_3_roof,after,2
+g2_left,after_fade,2

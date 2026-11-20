@@ -1,0 +1,7 @@
+# Godot 4+ imported artifacts & cache
+.godot/
+
+# OS/editor cruft
+.DS_Store
+Thumbs.db
+*.tmp

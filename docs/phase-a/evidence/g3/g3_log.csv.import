@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://v38q5ucqijn1"
+
+[deps]
+
+files=["res://docs/phase-a/evidence/g3/g3_log.phase.translation", "res://docs/phase-a/evidence/g3/g3_log.active.translation"]
+
+source_file="res://docs/phase-a/evidence/g3/g3_log.csv"
+dest_files=["res://docs/phase-a/evidence/g3/g3_log.phase.translation", "res://docs/phase-a/evidence/g3/g3_log.active.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

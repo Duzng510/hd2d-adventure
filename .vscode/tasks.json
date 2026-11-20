@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "godot: run game",
+			"type": "shell",
+			"command": "${workspaceFolder}/run.bat",
+			"group": { "kind": "build", "isDefault": true },
+			"problemMatcher": [],
+			"presentation": { "reveal": "silent", "panel": "dedicated", "close": false },
+			"options": { "cwd": "${workspaceFolder}" }
+		}
+	]
+}

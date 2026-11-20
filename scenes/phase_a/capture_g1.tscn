@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/phase_a/phase_a_playground.tscn" id="1_pg"]
+[ext_resource type="Script" path="res://scripts/phase_a/g1_capture_driver.gd" id="2_drv"]
+
+[node name="CaptureG1" type="Node"]
+
+[node name="PhaseAPlayground" parent="." instance=ExtResource("1_pg")]
+
+[node name="G1CaptureDriver" type="Node" parent="."]
+script = ExtResource("2_drv")
