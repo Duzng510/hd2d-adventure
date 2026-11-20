@@ -85,8 +85,9 @@ Sau prototype, ghi vào `docs/DECISIONS.md`: kiến trúc không gian (XZ hay 3D
 | G3.1 | Pass | `evidence/g3/g3_1_near_before.png` / `_after.png` + `g3_log.csv` | Trước: player sau Block bị che khuất; sau fade: player + telegraph đọc rõ, hướng đọc được |
 | G3.2 | Pass | `g3_2_wall_before.png` / `_after.png` + csv | Trước: player sau Wall bị che; sau fade: player + telegraph đọc rõ |
 | G3.3 | Pass | `g3_3_roof_before.png` / `_after.png` + csv | Trước: Roof che toàn bộ player/telegraph; sau fade: cả hai đọc rõ |
-| Gate 4 | Not Run | — | — |
-| Mục 5 | Not Run | — | — |
+| Gate 4 | Pass | `docs/phase-a/ART_SPEC.md` | User xác nhận bằng văn bản 2026-11-20; đủ scale/canvas/pivot/hướng/pixel density/footprint |
+| Mục 5 | Pass | `docs/DECISIONS.md` D-006, D-007, D-008 | Đã ghi không gian/projection/camera/aim/lỗi visual; D-007+D-008 vẫn Proposed chờ user chốt |
+| Pixel-grid & shimmer (ngoài gate) | Measured | `evidence/pixel/` + mục 12 | T-006: đo 6 config, metric residual biết FAIL trước; không phải gate Phase A |
 
 ## 7. Trình tự thực hiện (theo GDD mục 12)
 
@@ -168,3 +169,29 @@ Offset = `camera.unproject_position(aim)` so với mouse → 0 mọi điểm: ma
 - Ghi chú: ảnh sau có Roof fade trong suốt phủ lên player/telegraph (fader bật) làm sprite hơi nhạt màu — đây là tradeoff fade đã ghi mục 10, không phải lỗi ambient. fps HUD=1 trong ảnh sau = artifact capture (chụp ngay sau stall save_png), không phải perf game.
 
 **Kết luận:** Known Issue ambient/shadow đen tuyệt đối **đóng**. Readability mặt khuất cải thiện; cảm nhận ánh sáng cuối cùng chờ L4 + Art Spec asset thật.
+
+## 12. Kết quả đo pixel-grid + shimmer (2026-11-20, T-006, AI-observed)
+
+**Điều kiện:** Godot 4.7.2.stable, Vulkan 1.4.323 Forward+, Intel UHD, 1280×720, `--fixed-fps 60`; scene `scenes/phase_a/capture_pixel.tscn` (instance playground + driver). Player chạy phải 4 u/s, 24 frame mỗi config, 6 config. Bằng chứng: `evidence/pixel/` (18 PNG đã xem thật + `pixel_log.csv`, 144 dòng). Math: `tests/test_pixel_grid.gd` PASS 17 checks; negative control `-- negative` FAIL exit 1 (fixture sai "texel vuông" bị bắt).
+
+**Metric shimmer (residual):** giữa 2 frame liên tiếp, tịnh tiến frame B theo shift màn hình của điểm world cố định `ANCHOR (6,0,−2)` làm tròn về integer px, rồi diff với frame A; đếm pixel lệch > 8/255. Loại vùng HUD (0,0,1024,64) và hộp player ±180 px → residual chỉ đo **world tĩnh**. Ảnh `<config>_residual.png` = phần lệch ×4. **Metric chứng minh biết FAIL trước:** nosnap cho 7.406–18.013 px, snap cho 285–347 px; ảnh nosnap sáng rõ các đường lưới, ảnh snap lưới đen hoàn toàn.
+
+| Config | px/unit | texel W×H (px) | aspect | anchor_dev (px) | residual (px) | player_dev (px) |
+|---|---|---|---|---|---|---|
+| persp_nosnap | 89.158 | 4.458×2.785 | 0.6247 | 0.4929 | 18013 | 0.0000 |
+| persp_snap | 89.158 | 4.458×2.785 | 0.6247 | 0.4888 | 18681 | 0.0562 |
+| ortho10_nosnap | 72.000 | 3.600×2.249 | 0.6247 | 0.4000 | 9038 | 0.0000 |
+| ortho10_snap | 72.000 | 3.600×2.249 | 0.6247 | 0.0001 | 285 | 0.2000 |
+| ortho9_nosnap | 80.000 | 4.000×2.499 | 0.6247 | 0.3334 | 7406 | 0.0000 |
+| ortho9_snap | 80.000 | 4.000×2.499 | 0.6247 | 0.0000 | 347 | 0.3334 |
+
+`anchor_dev` = biên độ lệch phần lẻ px của điểm world cố định so với frame đầu (wrap ±0.5). `player_dev` = lệch phần lẻ frame-kề-frame của gốc player. `engine_texel_w` trong CSV = đo trực tiếp bằng `unproject_position`, cross-validate module math.
+
+**Kết luận từng mục:**
+1. **Texel không vuông ở MỌI config** (aspect 0.6247 = cos 51.34°): hệ quả cấu trúc của billboard `FIXED_Y` + camera nghiêng 51.34°, độc lập projection. Muốn texel vuông phải đổi cách đặt sprite (full billboard, hoặc mặt phẳng nghiêng khớp pitch camera) — D-008.
+2. **Integer scale chỉ khả thi với ortho:** ortho size 9 cho texel ngang đúng 4.000 px; persp cho 4.458 px tại player nhưng 4.062 px tại ANCHOR (engine đo) → px/texel đổi theo độ sâu, không thể integer toàn cục. `engine_texel_w` khớp math ở ortho (4.0000) và lệch ở persp (4.0616 vs 4.4579) → chính là bằng chứng ràng buộc cấu trúc.
+3. **Camera snap khóa world crawl chỉ với ortho:** `anchor_fx` = 0.0000 mọi frame ở ortho9_snap; residual 7406→347 (−95%). Persp snap không giảm (18013→18681) vì px/unit đổi theo độ sâu.
+4. **Snap đánh đổi sang sprite crawl:** `player_fx` nosnap hằng 0.0000 (camera bám đúng player nên sprite đứng yên trên màn hình); bật snap thành 0.3333/0.6667 luân phiên. Khóa lưới pixel đầy đủ cần **visual snap của sprite** tách khỏi logic position — chưa implement, D-008.
+5. Residual ~300 px còn lại ở ortho_snap là viền reticle: reticle bám tia chuột nên dịch chuyển theo camera, không phải world tĩnh; không phải shimmer lưới.
+
+**Giới hạn:** shimmer đo bằng số + ảnh residual, chưa phải video; cảm nhận crawl khi chơi thật chờ L4. Sprite crawl mới có số, chưa xác nhận thị giác. fps HUD trong ảnh capture là artifact capture dày, đo thật ở L4.

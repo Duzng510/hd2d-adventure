@@ -18,7 +18,9 @@
 ## 3. Pixel density & luật pixel-grid
 
 - 1 texel = 0.05 world unit (pixel_size 0.05).
-- **Screen px/texel hiện ≈ 1.5 (KHÔNG integer)** ở perspective FOV35 → chưa thỏa luật "1 texel = 1 px screen" / integer scaling. **Mở:** chốt khi chọn projection (ortho cho phép khóa texel=1px dễ hơn; perspective cần chỉnh pixel_size/khoảng cách). Ghi DECISIONS D-007 (Proposed).
+- **Đo thật T-006 (2026-11-20, `evidence/pixel/`, OPERATIONAL_DEFINITIONS §12):** persp FOV35 = **4.458 × 2.785 px/texel**; ortho size 10 = 3.600 × 2.249; ortho size 9 = 4.000 × 2.499. **Aspect mọi config = 0.6247** (texel bị nén dọc do billboard FIXED_Y + camera nghiêng 51.34°) → chưa thỏa luật "1 texel = 1 px vuông". Ước lượng "≈1.5 px/texel" ghi trước đây là sai, đã thay bằng số đo.
+- Integer scale chỉ khả thi với **ortho** (size = H × pixel_size / scale: 720p → 36/18/12/9 cho 1/2/3/4 px mỗi texel). Persp có px/texel đổi theo độ sâu → không integer toàn cục.
+- Camera snap (`snap_to_pixel`) khóa world crawl với ortho (residual −95%) nhưng làm sprite crawl; cần thêm visual snap của sprite. Gói giải pháp đầy đủ: D-008 (Proposed).
 - Import: texture code-gen `ImageTexture` (không asset ngoài, không import settings ngoài); palette chung trong `PlaceholderTextures.PALETTE`.
 
 ## 4. Collision footprint (tách khỏi visual)
@@ -35,6 +37,6 @@
 
 ## 6. Việc còn mở trước khi sinh asset hàng loạt
 
-- Chốt projection + integer pixel scaling (mục 3).
+- Chốt projection (D-007) + gói pixel-grid (D-008): ortho integer scale + camera snap + sprite visual snap + cách đặt sprite cho texel vuông.
 - Chốt bộ hướng sprite (đề xuất 4 hướng) + frame size thật cho nhân vật/quái.
 - Xác nhận palette cuối + nguồn asset (free-license) trước khi thay placeholder.

@@ -13,6 +13,7 @@ Lịch sử quyết định. Quyết định bị thay thế đánh **Superseded
 | D-005 | 2026-11-20 | Technical | Physics layers: 1=world, 2=player | Proposed |
 | D-006 | 2026-11-20 | Technical | Gameplay XZ-plane + aim ground y=0 + occlusion fade 0.25 | Accepted |
 | D-007 | 2026-11-20 | Technical | Projection baseline: perspective FOV35 + snap follow (ortho thử qua P) | Proposed |
+| D-008 | 2026-11-20 | Technical | Gói khóa pixel-grid: ortho integer scale + camera snap + sprite visual snap + texel vuông | Proposed |
 
 ---
 
@@ -64,3 +65,11 @@ Lịch sử quyết định. Quyết định bị thay thế đánh **Superseded
 - **Reason:** Perspective cho chiều sâu diorama HD-2D; snap giữ camera bám chính xác để đo aim/drift. Ortho chưa kiểm chứng trên máy dev.
 - **Alternatives considered:** Orthographic — khóa integer pixel (texel=1px) dễ hơn nhưng chưa đo; follow smoothing >0 — mượt hơn nhưng thêm latency, để dành tinh chỉnh feel ở L4.
 - **Consequences:** Giữ **Proposed** tới khi user so sánh persp/ortho trực tiếp (P) và duyệt sau L4. Screen px/texel hiện ≈1.5 (không integer) → luật pixel-grid texel=1px còn mở, gắn với lựa chọn projection (ART_SPEC §3). Không tự nâng lên Accepted.
+- **Evidence T-006 (2026-11-20, đo renderer thật):** persp = 4.458×2.785 px/texel và đổi theo độ sâu (4.062 tại điểm xa hơn) → không thể integer toàn cục; camera snap không giảm shimmer persp (residual 18013→18681 px). Ortho size 9 = 4.000 px/texel ngang, snap giảm residual 7406→347 px. Xem OPERATIONAL_DEFINITIONS §12. Lựa chọn projection nay có số liệu; vẫn chờ user chốt.
+
+## D-008 · 2026-11-20 · Technical · Proposed
+
+- **Decision:** Gói điều kiện để thỏa luật pixel-grid "texel vuông, integer px/texel, không crawl", gồm 4 phần: (1) projection ortho với `size = viewport_height × pixel_size / scale` (integer scale); (2) camera snap theo pixel màn hình (`snap_to_pixel`, đã implement); (3) visual snap của sprite tách khỏi logic position (chưa implement); (4) cách đặt sprite cho texel vuông: full billboard hoặc mặt phẳng nghiêng khớp pitch camera (chưa implement, chưa chọn).
+- **Reason:** Đo T-006 cho thấy thiếu bất kỳ phần nào thì luật vẫn vỡ: aspect 0.6247 ở mọi config (thiếu 4); persp không integer (thiếu 1); world crawl 0.33–0.49 px khi chưa snap (thiếu 2); bật snap thì sprite crawl 0.33 px (thiếu 3). Đây là ràng buộc cấu trúc, không chỉnh một tham số là hết.
+- **Alternatives considered:** Giữ perspective + chỉnh pixel_size — bị loại vì px/texel đổi theo độ sâu; SubViewport low-res + integer upscale — khóa được lưới nhưng mất chi tiết diorama 3D của HD-2D, để dành nếu user chọn hướng retro thuần; chấp nhận texel nén 0.6247 — phá luật pixel-grid của user, không tự chấp nhận.
+- **Consequences:** (2) đã implement và đo; (1)(3)(4) chờ user chốt projection + hướng đặt sprite rồi mới implement (T-007). Không tự nâng Accepted. Asset hàng loạt vẫn chặn tới khi gói này chốt (ART_SPEC §6).
