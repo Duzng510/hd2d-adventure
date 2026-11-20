@@ -86,3 +86,80 @@ static func _rect(img: Image, x: int, y: int, w: int, h: int, c: Color) -> void:
 	for iy in range(y, y + h):
 		for ix in range(x, x + w):
 			img.set_pixel(ix, iy, c)
+
+
+static func make_telegraph_disc(diameter: float) -> ImageTexture:
+	# Boss smash telegraph: filled danger disc, white mask tinted by the caller.
+	var size := _texel_count(diameter)
+	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var center := (size - 1) * 0.5
+	var radius := size * 0.5
+	for y in size:
+		for x in size:
+			var d := Vector2(x - center, y - center).length()
+			if d <= radius:
+				img.set_pixel(x, y, _ink(0.85) if d >= radius - 2.0 else _ink(0.32))
+	return ImageTexture.create_from_image(img)
+
+
+static func make_telegraph_bands(diameter: float) -> ImageTexture:
+	# Boss sweep telegraph: filled disc with concentric bands, reads as a spin.
+	var size := _texel_count(diameter)
+	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var center := (size - 1) * 0.5
+	var radius := size * 0.5
+	for y in size:
+		for x in size:
+			var d := Vector2(x - center, y - center).length()
+			if d <= radius:
+				var alpha := 0.5 if int(d / 3.0) % 2 == 0 else 0.25
+				img.set_pixel(x, y, _ink(0.85) if d >= radius - 2.0 else _ink(alpha))
+	return ImageTexture.create_from_image(img)
+
+
+static func make_telegraph_spokes(diameter: float) -> ImageTexture:
+	# Phase-switch telegraph: filled disc with eight radial spokes.
+	var size := _texel_count(diameter)
+	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var center := (size - 1) * 0.5
+	var radius := size * 0.5
+	for y in size:
+		for x in size:
+			var offset := Vector2(x - center, y - center)
+			if offset.length() <= radius:
+				var sector := int(wrapf((atan2(offset.y, offset.x) + PI) / (PI / 4.0), 0.0, 8.0))
+				var alpha := 0.55 if sector % 2 == 0 else 0.22
+				img.set_pixel(x, y, _ink(0.9) if offset.length() >= radius - 2.0 else _ink(alpha))
+	return ImageTexture.create_from_image(img)
+
+
+static func make_telegraph_arrow(length: float, width: float) -> ImageTexture:
+	# Boss lunge telegraph: ground arrow pointing along +X (dash path).
+	var w := _texel_count(length)
+	var h := _texel_count(width)
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var shaft := int(w * 0.6)
+	var center_y := (h - 1) * 0.5
+	for y in h:
+		for x in w:
+			var ny := absf((y - center_y) / maxf(center_y, 1.0))
+			var in_shaft := x < shaft and ny <= 0.5
+			var head_x := float(x - shaft) / maxf(float(w - shaft), 1.0)
+			var in_head := x >= shaft and ny <= maxf(1.0 - head_x, 0.0) * 0.95
+			if in_shaft or in_head:
+				var edge := ny >= 0.38 or x >= w - 2
+				img.set_pixel(x, y, _ink(0.85) if edge else _ink(0.35))
+	return ImageTexture.create_from_image(img)
+
+
+static func _ink(alpha: float) -> Color:
+	return Color(1.0, 1.0, 1.0, alpha)
+
+
+static func _texel_count(metres: float) -> int:
+	# Pixel-grid lock (D-008): one texel is 0.05 m, so sizes stay whole texels.
+	return maxi(int(round(metres / 0.05)), 2)

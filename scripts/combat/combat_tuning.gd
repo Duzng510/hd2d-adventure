@@ -57,3 +57,27 @@ extends Resource
 @export var ranged_damage: int = 8
 @export var ranged_projectile_speed: float = 6.0
 @export var ranged_projectile_lifetime_frames: int = 120
+
+@export_group("Boss")
+@export var boss_max_hp: int = 300
+@export var boss_detect_range: float = 12.0
+@export var boss_chase_speed: float = 2.0
+@export var boss_phase_hp_percent: int = 50
+@export var boss_phase_switch_frames: int = 45
+@export var boss_smash_telegraph_frames: int = 30
+@export var boss_smash_active_frames: int = 6
+@export var boss_smash_recovery_frames: int = 30
+@export var boss_smash_phase2_recovery_frames: int = 20
+@export var boss_smash_damage: int = 20
+@export var boss_smash_radius: float = 2.2
+@export var boss_lunge_telegraph_frames: int = 24
+@export var boss_lunge_active_frames: int = 8
+@export var boss_lunge_recovery_frames: int = 24
+@export var boss_lunge_phase2_recovery_frames: int = 16
+@export var boss_lunge_damage: int = 12
+@export var boss_lunge_range: float = 5.0
+@export var boss_sweep_telegraph_frames: int = 20
+@export var boss_sweep_active_frames: int = 6
+@export var boss_sweep_recovery_frames: int = 24
+@export var boss_sweep_damage: int = 10
+@export var boss_sweep_radius: float = 2.6
