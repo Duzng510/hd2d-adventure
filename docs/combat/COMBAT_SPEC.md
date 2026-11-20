@@ -94,6 +94,7 @@ Quy tắc:
 - `frame` = `sim_frame` monotonic (không reset khi R) · `attack_id` = ID của attack instance (không phải combo ID) · `target_id` khi event liên quan target · `value` theo convention từng event (damage amount, phase…), không chứa dữ liệu tùy ý.
 - Event bắt buộc: `input_light`, `input_dodge`, `action_start`, `active_start`, `active_end`, `hit`, `damage`, `telegraph_start`, `telegraph_end`, `alert`, `death`, `encounter_reset`.
 - Event encounter (T-012): `encounter_win`, `encounter_lose`; `encounter_reset` có `value` = số run đã hoàn tất.
+- Event encounter Phase C (T-018): `wave_start` với `value` = chỉ số wave 1-based; log tại tick spawn wave, sau `encounter_reset`/run start. Win/lose/reset giữ semantics T-012. Event của vai trò enemy mới (`projectile_*`, `boss_phase`, `reward_granted`) thêm ở T-020/T-021/T-022.
 - `telegraph_start` tại frame telegraph đầu tiên; `telegraph_end` tại boundary tick kết thúc telegraph (cùng tick với `active_start`, log trước `active_start`). B4.1 đo `active_start.frame − telegraph_start.frame`.
 - Swing miss vẫn log `active_end`; không bắt buộc `hit`/`damage`. Enemy attack có `attack_id` riêng cho **mỗi** telegraph/attack instance.
 - Diagnostic input→action_start = số tick engine-side (chỉ diagnostic; không đại diện input-to-display — GDD 6.4).
