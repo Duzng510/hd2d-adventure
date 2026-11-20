@@ -97,17 +97,31 @@ Rubric chủ quan một người, sample nhỏ → tín hiệu ban đầu, khôn
 
 | Gate | Trạng thái | Evidence ref | Ngày |
 |---|---|---|---|
-| B1 Responsiveness | Not Run | — | — |
-| B2 One-hit-per-swing | Not Run | — | — |
-| B3 Enemy AI ranges | Not Run | — | — |
-| B4 Telegraph | Not Run | — | — |
-| B5 10 runs | Not Run | — | — |
-| B6 Readability | Not Run | — | — |
-| B7 Two approaches | Not Run | — | — |
-| D1–D3 Debug | Not Run | — | — |
+| B1 Responsiveness | Not Run | brief T-013, chờ L4 | — |
+| B2 One-hit-per-swing | Passed | B2.1 kernel 98 checks (100 swing, target HP reset); B2.2 `evidence/b2/` 12 swing; B2.3 registry-off negative exit 1 | 2026-11-20 |
+| B3 Enemy AI ranges | Passed | `evidence/b3/`: 10 trial alert 0 tick, telegraph 1.292 ≤ 1.3, wall_min 0.350, player_min 3.100; negative telegraph 3.96 exit 1 | 2026-11-20 |
+| B4 Telegraph | Incomplete | B4.1 t011 CSV 20 frame; B4.2 t011 ảnh telegraph; B4.3 chờ L4 | 2026-11-20 |
+| B5 10 runs | Not Run | chờ L4 | — |
+| B6 Readability | Not Run | B6.3 ảnh t011; B6.1/B6.2 chờ L4 | — |
+| B7 Two approaches | Not Run | chờ L4 | — |
+| D1–D3 Debug | Passed | D1 t010 ảnh off/on; D2 CSV có `alert`; D3 t012 cycles + capture | 2026-11-20 |
 
 ## 12. Thứ tự, overlap & exit
 
 - B2/B3 chạy được sớm bằng test headless sau T-009/T-011; B1/B4.3/B6/B7 cần L4 sau T-012; D1–D3 kiểm trong T-010–T-012.
 - Overlap có chủ đích: B3 = AI/range correctness; B4 = attack warning correctness; B6 = holistic player understanding; B1 = input responsiveness. Không gate nào thay thế gate khác.
 - **Phase B exit = AND(B1…B7, D1, D2, D3)** hoặc waiver MP 8.6; không có "80% gate là đủ", không gộp gate kỹ thuật với trải nghiệm thành điểm trung bình. Chỉ chấm gate tổng sau khi user xác nhận file này.
+
+## 13. Evidence automated T-014 (2026-11-20)
+
+Harness: `scenes/phase_b/run_b2_swings.tscn`, `run_b3_trials.tscn`, `capture_b3.tscn`; driver: `scripts/phase_b/b2_swing_driver.gd`, `b3_trial_driver.gd`, `b3_capture_driver.gd`. Kết quả dưới đây chạy trên commit T-014 (nhánh `phase-b/t014-gate-evidence`), Forward+/Intel UHD, headless dùng `--fixed-fps 60`.
+
+- **B2.1**: `test_combat_kernel` 98 checks exit 0; 100 swing cùng target, target `Health(30)` reset mỗi swing → HP còn 20 sau mỗi swing (đúng 1 damage/swing). Negative `-- negative` fail 4/98 (gồm duplicate + HP reset) exit 1.
+- **B2.2**: 12 swing trong scene (Grunt reset mỗi swing) → mỗi `attack_id` đúng 1 `hit` + 1 `damage`, target 1, damage 10; `evidence/b2/summary.txt` + `combat_log.csv`.
+- **B2.3**: registry `enforce = false` → 3 hit/damage mỗi swing, harness FAIL exit 1 (bắt đúng lỗi duplicate).
+- **B3.1**: 10 trial độc lập, player vào vùng detect ở x=7 (Grunt x=3) → `alert` cùng tick (latency 0 ở cả 10, ngưỡng ≤5).
+- **B3.2**: telegraph tại distance 1.2917 ≤ 1.3 (10/10); damage xảy ra sau active và chỉ trong range; negative (attack_range=8) telegraph 3.96 + không damage → exit 1.
+- **B3.3**: chase 240 tick vào tường: min clearance tâm Grunt→AABB tường = 0.350 (ngưỡng ≥0.3); min distance tới player = 3.100 (≥0.7); ảnh `chase_wall.png`, `chase_blocked.png` đã xem. AI không pathfind nên đứng tại tường — không phải xuyên.
+- **B4.1**: từ `evidence/t011/combat_log.csv`: attack 2–7 có `active_start − telegraph_start = 20`; attack 1 = 23 do hitstop 3 khi player trúng đòn; min 20 ≥ `grunt_telegraph_frames`. **B4.2**: ảnh `t011/telegraph.png` + `telegraph_hitbox_overlay.png` đã xem.
+- **D2**: CSV có `alert` (`t011` frame 1; `b3` 10 alert). **D1**: `t010/d1_off.png`/`d1_on.png` đã xem. **D3**: `t012` cycles (R/auto reset + `encounter_reset`) và capture HUD.
+- Trước L4, node `Player/Telegraph` (placeholder Phase A luôn hiện quanh player) đã được ẩn (`visible=false`) để tránh nhầm với telegraph của Grunt; không ảnh hưởng logic/hitbox.

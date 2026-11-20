@@ -138,12 +138,19 @@ func _test_hit_registry() -> void:
 	var swings := 100
 	var active_ticks := 3
 	var applied := 0
+	var target := Health.new(30)
+	var hp_resets_ok := true
 	for swing in range(swings):
+		target.reset()
 		for tick in range(active_ticks):
 			if registry.try_register(swing + 1, 1):
 				applied += 1
+				target.apply_damage(10)
+		if target.hp != 20:
+			hp_resets_ok = false
 	_check(registry.duplicate_applied == 0, "0 duplicate damage in 100 swings")
 	_check(applied == swings, "exactly one damage per swing")
+	_check(hp_resets_ok, "target HP reset between swings")
 	_check(registry.blocked_repeats == swings * (active_ticks - 1), "repeat overlaps blocked")
 	var multi := HitRegistry.new()
 	_check(multi.try_register(7, 1), "first hit on target 1")

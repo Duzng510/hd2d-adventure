@@ -1,0 +1,2 @@
+swings=12 unique=12 problems=[]
+PASS b2_swings: 12 swings

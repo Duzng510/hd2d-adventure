@@ -1,7 +1,7 @@
 # PLAYTEST BRIEF — PHASE B (L4)
 
 > Trạng thái: **sẵn sàng chơi** — chờ user chạy 10 encounter và gửi báo cáo theo mẫu §3.
-> Build chơi: commit **fd3a031** (T-012), branch `phase-b/t012-encounter-loop`. T-013 chỉ thêm tài liệu, không đổi gameplay.
+> Build chơi: nhánh `phase-b/t014-gate-evidence` (nền T-012 `fd3a031`; T-014 thêm harness gate và ẩn placeholder telegraph quanh player — không đổi gameplay combat).
 > Môi trường: Windows (i5-13420H / Intel UHD / 24 GB), 1280×720, Forward+ Vulkan (D-004 Proposed). Chưa có build Android/touch — cần bàn phím + chuột.
 
 ## 1. Cách chạy & điều khiển
@@ -71,7 +71,8 @@ Gửi kèm file log: `%APPDATA%\Godot\app_userdata\hd2d-adventure\combat_log.csv
 ## 4. Lỗi đã biết — không tính là lỗi mới
 
 - Player có thể đi xuyên thân Grunt (`collision_layer = 0`, D-005) — chờ chính L4 này đánh giá mức ảnh hưởng.
-- Art placeholder: nhân vật/Grunt là khối hộp, telegraph là quad hồng, không animation; đánh giá readability trên placeholder là chủ đích.
+- Art placeholder: nhân vật/Grunt là khối hộp, telegraph là quad, không animation; đánh giá readability trên placeholder là chủ đích.
+- Khung placeholder Phase A quanh player đã được ẩn (T-014); telegraph thật chỉ xuất hiện dưới Grunt.
 - Ảnh evidence cũ có fps thấp là artifact `--fixed-fps` của capture, không phải FPS game.
 - Aim snapshot: đổi hướng chuột giữa swing không đổi hướng đòn đang ra (D-010).
 
