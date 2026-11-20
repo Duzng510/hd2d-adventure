@@ -12,6 +12,10 @@ const ENEMY_HURTBOX_MASK := 32
 @export var hitbox_path: NodePath = NodePath("../AttackHitbox")
 @export var hitbox_shape_path: NodePath = NodePath("../AttackHitbox/CollisionShape3D")
 @export var swing_visual_path: NodePath = NodePath("../AttackHitbox/SwingArc")
+@export var sprite_path: NodePath = NodePath("../Sprite3D")
+## Capture/debug hook: attack aim uses aim_override_point instead of the mouse.
+@export var aim_override_enabled: bool = false
+@export var aim_override_point := Vector3.ZERO
 
 var health: Health
 
@@ -21,6 +25,7 @@ var _aim: AimMarker
 var _hitbox: Area3D
 var _hitbox_shape: CollisionShape3D
 var _swing: MeshInstance3D
+var _sprite: Sprite3D
 
 var _attack: AttackState
 var _buffer: InputBuffer
@@ -32,6 +37,8 @@ var _swing_id: int = 0
 var _attack_dir := Vector3.RIGHT
 var _dodge_dir := Vector3.RIGHT
 var _was_active: bool = false
+var _hit_flash_frames: int = 0
+var _logged_death: bool = false
 
 
 func _ready() -> void:
@@ -42,6 +49,7 @@ func _ready() -> void:
 	_hitbox = get_node(hitbox_path)
 	_hitbox_shape = get_node(hitbox_shape_path)
 	_swing = get_node_or_null(swing_visual_path)
+	_sprite = get_node_or_null(sprite_path)
 	health = Health.new(tuning.player_max_hp)
 	_attack = AttackState.new(
 		tuning.light_startup_frames,
@@ -64,6 +72,13 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
+	_tick_hit_flash()
+	if health.is_dead():
+		if not _logged_death:
+			_logged_death = true
+			_director.log_event(&"player", &"death")
+		_set_locked(true, Vector3.ZERO)
+		return
 	if _director.frozen_tick:
 		_capture_frozen_input()
 		_set_locked(true, Vector3.ZERO)
@@ -163,14 +178,17 @@ func _resolve_hits() -> void:
 		var area := hit.collider as Area3D
 		if area == null or not area.is_in_group(&"enemy_hurtbox"):
 			continue
+		var receiver: Node = area
+		if not receiver.has_method(&"apply_hit"):
+			receiver = area.get_parent()
 		var target_id := 0
-		if area.get(&"target_id") != null:
-			target_id = int(area.get(&"target_id"))
+		if receiver.get(&"target_id") != null:
+			target_id = int(receiver.get(&"target_id"))
 		if not _registry.try_register(_swing_id, target_id):
 			continue
 		var applied := 0
-		if area.has_method(&"apply_hit"):
-			applied = int(area.call(&"apply_hit", tuning.light_damage))
+		if receiver.has_method(&"apply_hit"):
+			applied = int(receiver.call(&"apply_hit", tuning.light_damage))
 		_director.log_event(&"player", &"hit", _swing_id, target_id)
 		_director.log_event(&"player", &"damage", _swing_id, target_id, applied)
 		_director.request_hitstop(tuning.hitstop_frames)
@@ -209,12 +227,49 @@ func _tick_dodge() -> void:
 
 
 func _aim_direction() -> Vector3:
-	if _aim != null and _aim.has_hit:
-		var direction := _aim.aim_point - _player.global_position
+	var target := Vector3.ZERO
+	var has_target := false
+	if aim_override_enabled:
+		target = aim_override_point
+		has_target = true
+	elif _aim != null and _aim.has_hit:
+		target = _aim.aim_point
+		has_target = true
+	if has_target:
+		var direction := target - _player.global_position
 		direction.y = 0.0
 		if direction.length_squared() > 0.0001:
 			return direction.normalized()
 	return Vector3(float(_player.facing), 0.0, 0.0)
+
+
+func is_invulnerable() -> bool:
+	return _dodge.is_invulnerable()
+
+
+func is_dead() -> bool:
+	return health.is_dead()
+
+
+func hp() -> int:
+	return health.hp
+
+
+func apply_hit(amount: int) -> int:
+	var applied := health.apply_damage(amount)
+	if applied > 0:
+		_hit_flash_frames = 6
+		if _sprite != null:
+			_sprite.modulate = Color(1.0, 0.35, 0.35)
+	return applied
+
+
+func _tick_hit_flash() -> void:
+	if _hit_flash_frames <= 0:
+		return
+	_hit_flash_frames -= 1
+	if _hit_flash_frames == 0 and _sprite != null:
+		_sprite.modulate = Color.WHITE
 
 
 func _set_locked(locked: bool, override_velocity: Vector3) -> void:
