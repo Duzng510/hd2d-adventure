@@ -15,6 +15,7 @@ Lịch sử quyết định. Quyết định bị thay thế đánh **Superseded
 | D-007 | 2026-11-20 | Technical | Projection: ortho texel_scale 4 + camera snap (persp giữ qua P để so sánh) | Accepted |
 | D-008 | 2026-11-20 | Technical | Khóa pixel-grid: ortho integer scale + camera snap + sprite visual snap; giữ FIXED_Y, mật độ texel cố định | Accepted |
 | D-009 | 2026-11-20 | Workflow | Waiver thoát Phase A khi L4 Not Run (user duyệt) | Accepted |
+| D-010 | 2026-11-20 | Product | Light Attack hướng theo mouse snapshot tại action_start | Accepted |
 
 ---
 
@@ -82,3 +83,10 @@ Lịch sử quyết định. Quyết định bị thay thế đánh **Superseded
 - **Alternatives considered:** Chạy L4 Phase A trước khi sang B — user bỏ qua để không chặn combat prototype; ở lại Phase A chờ playtest — bị loại.
 - **Consequences:** L4 Phase A giữ nguyên **Not Run** (không thành Passed). Rủi ro chấp nhận: feel camera/movement chưa được người chơi xác nhận; giảm thiểu bằng L4 Phase B (build tích lũy) và tinh chỉnh theo playtest.
 - **Scope:** Chỉ áp dụng cho bước chuyển Phase A→B; không miễn gate nào của Phase B; MVS-AC1…8 vẫn chờ user duyệt riêng.
+
+## D-010 · 2026-11-20 · Product · Accepted
+
+- **Decision:** Light Attack lấy hướng đánh = **snapshot vị trí aim của chuột tại `action_start`** (ground y=0), cố định suốt swing; facing sprite flip theo dấu X của hướng; hitbox định hướng theo snapshot. Mouse di chuyển sau đó không đổi hướng đòn.
+- **Reason:** User chốt 2026-11-20 qua lựa chọn "Mouse snapshot" — khớp reticle/aim Phase A (D-006) và GDD 5.3 (free aim bằng chuột).
+- **Alternatives considered:** Đánh theo facing L/R — loại vì bỏ free-aim; cập nhật hướng live trong startup/active — loại vì hitbox đổi hướng giữa swing, khó đọc và khó test.
+- **Consequences:** Đòn có thể đánh mọi hướng trên XZ (kể cả ngược sprite vì placeholder chỉ flip L/R) — readability hướng dọc/ngược đánh giá ở L4; hitbox reach trong `combat_tuning.tres`.

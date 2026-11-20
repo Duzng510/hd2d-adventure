@@ -8,6 +8,7 @@ light_startup_frames = 4
 light_active_frames = 3
 light_recovery_frames = 10
 combo_window_frames = 10
+light_combo_hits = 3
 light_damage = 10
 light_reach = 1.4
 dodge_iframe_frames = 10

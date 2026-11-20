@@ -8,6 +8,7 @@ extends Resource
 @export var light_active_frames: int = 3
 @export var light_recovery_frames: int = 10
 @export var combo_window_frames: int = 10
+@export var light_combo_hits: int = 3
 @export var light_damage: int = 10
 @export var light_reach: float = 1.4
 

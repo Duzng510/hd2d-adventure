@@ -1,5 +1,6 @@
 extends SceneTree
 
+# Envelope checks mirror the GDD 6.4 HYPOTHESIS ranges (prototype guard, not a design rule).
 const TUNING_PATH := "res://scripts/combat/combat_tuning.tres"
 
 var _checks: int = 0
@@ -17,6 +18,7 @@ func _initialize() -> void:
 	_check(tuning.light_active_frames >= 2 and tuning.light_active_frames <= 4, "active 2-4")
 	_check(tuning.light_recovery_frames >= 8 and tuning.light_recovery_frames <= 14, "recovery 8-14")
 	_check(tuning.combo_window_frames >= 8 and tuning.combo_window_frames <= 14, "combo window 8-14")
+	_check(tuning.light_combo_hits >= 2 and tuning.light_combo_hits <= 4, "combo hits 2-4")
 	_check(tuning.dodge_iframe_frames >= 8 and tuning.dodge_iframe_frames <= 14, "dodge iframe 8-14")
 	_check(tuning.dodge_total_frames >= 18 and tuning.dodge_total_frames <= 28, "dodge total 18-28")
 	_check(tuning.dodge_iframe_frames < tuning.dodge_total_frames, "iframe shorter than dodge")
