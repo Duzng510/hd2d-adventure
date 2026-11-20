@@ -124,7 +124,7 @@ MVS-AC1…8 (GDD mục 0, PROPOSED): chưa kiểm chứng — chưa có build ch
 - T-026 | Vòng định vị player khi thân địch đè lên (D-017) | DONE — L3 `capture_t026.tscn` 1280 px đổi / ngưỡng 40, negative control cùng pose 0 px, P26.3 chặn ảnh đen xanh rỗng | AC: ring đọc được qua body boss | Dep: xong
 
 ## Next (3–5)
-- Đo lại punish window trên build có ring: 2–3 run người thật qua `play_arena.tscn` + `score_l4.mjs --probe`, so với 6/97 và 3/155; chỉ đổi 1 tham số nếu dữ liệu chỉ đúng một lever (MP 9) | Dep: user
+- Đo thêm 3–5 run sau ring (cùng build, một launch, kết thúc mỗi run bằng W/L rồi R): **ngưỡng đã ghi trước** — punish used/open ≥25% mà vẫn thua → thiếu damage window; dodge-ready lúc ăn đòn <50% → vấn đề commit, cân nhắc cơ chế cancel; boss HP left trung bình ≤120 → chỉ còn DPS/HP. Chưa qua ngưỡng nào thì không đổi tham số (MP 9). | Dep: user
 - Phase D: MVS field + dungeon (GDD 13); L4 Phase D đo riêng, không vay bằng chứng Phase C | Dep: user
 - Phase D: MVS field + dungeon (GDD 13) sau khi Phase C đóng; nghĩa vụ treo B7.3 (D-012) khi thêm anti-spam | Dep: user
 - B7.3 retest bằng harness spam khi cơ chế chống spam (GDD 6.8.7) được thêm | Dep: cơ chế được duyệt (D-012)
@@ -138,7 +138,7 @@ Phase C stretch (extended encounter, GDD mục 12) → Phase D MVS (field Verdan
 - Ngưỡng pass/fail playtest MVS-AC2 chưa đặt (GDD: lần đầu chỉ tạo baseline).
 
 ## Known issues
-- **(T-025, đã kết luận) fps 19 không phải drop trong combat:** chỉ 6 sample frame 60–90; 1208 sample còn lại không mẫu nào <55 (mean 59,8) → warm-up shader/asset lúc launch. Scorer tách thành "play min 58 / launch min 19" và có fixture `probe-launch-noise` giữ điều này không hỏng âm thầm.
+- **(T-025, đã kết luận) fps 19 không phải drop trong combat:** chỉ 6 sample frame 60–90; 1208 sample còn lại không mẫu nào <55 (mean 59,8) → warm-up shader/asset lúc launch. Scorer tách thành "play min 58 / launch min 19" và có fixture `probe-launch-noise` giữ điều này không hỏng âm thầm. Session 3 (sau ring) lặp lại cùng hiện tượng với biên dài hơn: các sample 26 fps nằm ở frame 60–**102**, trong khi `LAUNCH_FRAMES = 96` của scorer nên 26 lọt vào "play min". Vẫn là đuôi warm-up, không phải dip combat; C3.3 vốn **chẩn đoán, không có ngưỡng** (`ok: true`), nên muốn kết luận perf thật thì nâng cửa sổ frame theo dữ liệu chứ không thêm ngưỡng fps.
 - **(T-025 → T-026, đã xử lý theo D-017) Body boss che sprite của player khi đứng sát dưới:** `session2/l4_death_1.png` không còn thấy player (boss 200/300 ngay phía trên), trong khi `l4_death_2.png` cách ~2 m thì thấy rõ. Nguyên nhân cấu trúc: `grove_arena.gd:34` chỉ thêm pillar vào group `fadeable`; enemy body đặt `collision_layer = 0` nên ray mask 1 của `OcclusionFader` không bao giờ chạm; và `_collect()` chỉ chạy khi `_mats` rỗng nên node spawn runtime không đăng ký được. **Không** sửa cơ chế fade (thân enemy là thông tin phải đọc); thay bằng `SelfMarker` vẽ xuyên dưới chân — L3: 1280 px đọc được qua body boss, control depth-tested 0 px. Ba gap cấu trúc trên vẫn còn nguyên và là đường nếu Phase D cần fade enemy thật.
 - **(T-024, đã sửa `3fba5fe`) Boss lặp đòn chuyển phase:** đòn player trúng boss **trong lúc** SWITCH đang chạy re-arm một SWITCH nữa → 2 lần đứng yên ~1.5 s/run, `boss_phase` 2 dòng/run. Chốt bằng `attack != SWITCH` trong `report_damage`; mắt user vẫn phải xác nhận ở L4 (brief §7).
 - (T-021) Body boss 1.6×2.4 m che phần trên của decal telegraph (4 ảnh đã xem) — decal vẫn đọc được nhờ viền; silhouette/chiều cao boss chốt ở Art Spec Phase D.
