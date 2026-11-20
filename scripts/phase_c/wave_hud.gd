@@ -35,7 +35,20 @@ func _process(_delta: float) -> void:
 			state_text = "THẮNG — R chơi lại"
 		WaveKernel.State.LOST:
 			state_text = "THUA — R chơi lại"
-	_label.text = "PLAYER %d/%d | WAVE %s | ENEMIES %d | %s" % [
+	var line := "PLAYER %d/%d | WAVE %s | ENEMIES %d | %s" % [
 		_combat.health.hp, _combat.health.max_hp,
 		wave_text, _encounter.alive_count(), state_text,
 	]
+	var boss_line := _boss_line()
+	if boss_line != "":
+		line += "\n" + boss_line
+	_label.text = line
+
+
+## Boss row carries HP and phase so the phase flip is readable in the arena.
+func _boss_line() -> String:
+	for enemy in _encounter.enemies():
+		if enemy is Boss:
+			var boss := enemy as Boss
+			return "BOSS %d/%d | PHASE %d" % [boss.hp(), boss.health.max_hp, boss.phase_number()]
+	return ""

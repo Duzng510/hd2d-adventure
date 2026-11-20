@@ -12,7 +12,7 @@ signal run_ended(won: bool)
 @export var wave_roles: Array = [
 	["grunt", "grunt", "swarm", "swarm", "swarm"],
 	["swarm", "swarm", "ranged", "ranged"],
-	["grunt"],
+	["boss"],
 ]
 @export var wave_pause_frames: int = 60
 @export var reset_delay_frames: int = 120

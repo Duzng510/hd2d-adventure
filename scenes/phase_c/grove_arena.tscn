@@ -15,6 +15,7 @@
 [ext_resource type="PackedScene" path="res://scenes/combat/grunt.tscn" id="13_grunt"]
 [ext_resource type="PackedScene" path="res://scenes/combat/swarm.tscn" id="14_swarm"]
 [ext_resource type="PackedScene" path="res://scenes/combat/ranged.tscn" id="15_ranged"]
+[ext_resource type="PackedScene" path="res://scenes/combat/boss.tscn" id="16_boss"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
 sky_top_color = Color(0.35, 0.45, 0.6, 1)
@@ -262,8 +263,8 @@ tuning = ExtResource("12_tuning")
 [node name="WaveEncounter" type="Node" parent="."]
 script = ExtResource("10_wave")
 tuning = ExtResource("12_tuning")
-enemy_scenes = {"grunt": ExtResource("13_grunt"), "swarm": ExtResource("14_swarm"), "ranged": ExtResource("15_ranged")}
-wave_roles = [["grunt", "grunt", "swarm", "swarm", "swarm"], ["swarm", "swarm", "ranged", "ranged"], ["grunt"]]
+enemy_scenes = {"grunt": ExtResource("13_grunt"), "swarm": ExtResource("14_swarm"), "ranged": ExtResource("15_ranged"), "boss": ExtResource("16_boss")}
+wave_roles = [["grunt", "grunt", "swarm", "swarm", "swarm"], ["swarm", "swarm", "ranged", "ranged"], ["boss"]]
 
 [node name="CameraRig" type="Camera3D" parent="."]
 script = ExtResource("3_cam")
