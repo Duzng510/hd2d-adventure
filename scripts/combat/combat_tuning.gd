@@ -35,3 +35,13 @@ extends Resource
 @export var grunt_active_frames: int = 3
 @export var grunt_recovery_frames: int = 18
 @export var grunt_damage: int = 15
+
+@export_group("Swarm")
+@export var swarm_max_hp: int = 20
+@export var swarm_detect_range: float = 6.0
+@export var swarm_attack_range: float = 1.0
+@export var swarm_approach_speed: float = 3.125
+@export var swarm_telegraph_frames: int = 18
+@export var swarm_active_frames: int = 4
+@export var swarm_recovery_frames: int = 20
+@export var swarm_damage: int = 5
