@@ -5,15 +5,18 @@ extends CanvasLayer
 
 @export var player_path: NodePath = NodePath("../Player")
 @export var encounter_path: NodePath = NodePath("../WaveEncounter")
+@export var reward_path: NodePath = NodePath("../Reward")
 
 var _combat: PlayerCombat
 var _encounter: WaveEncounter
+var _reward: Reward
 var _label: Label
 
 
 func _ready() -> void:
 	_combat = get_node(player_path).get_node("PlayerCombat")
 	_encounter = get_node(encounter_path)
+	_reward = get_node_or_null(reward_path) as Reward
 	_label = Label.new()
 	_label.position = Vector2(8, 64)
 	_label.add_theme_color_override(&"font_color", Color.WHITE)
@@ -42,6 +45,11 @@ func _process(_delta: float) -> void:
 	var boss_line := _boss_line()
 	if boss_line != "":
 		line += "\n" + boss_line
+	if _reward != null and _reward.kernel.gate_open():
+		var reward_text := "CỔNG MỞ — SHRINE PHÍA BẮC"
+		if _reward.kernel.state == RewardKernel.State.HEALED:
+			reward_text = "CỔNG MỞ — ĐÃ HỘI MÁU"
+		line += "\n" + reward_text
 	_label.text = line
 
 
