@@ -68,6 +68,7 @@ Mask: player mask = 1 (chạm world); world mask = 0; hitbox mask = layer hurtbo
 
 ## Git
 
-- Branch: `<phase>/<task-id>-<slug>` chữ thường, ví dụ `phase-a/t006-pixel-grid`; việc không thuộc phase: `chore/<slug>`. Mỗi task một branch, không commit thẳng `main`.
-- Commit message tiếng Anh, dạng `T-xxx <imperative summary ≤72 ký tự>`; body gạch đầu dòng nêu lý do + validation (L1/L2/L3, exit code). Không dùng prefix feat/fix.
-- Stage theo path cụ thể, không `git add -A`; commit `.uid` cùng file mới; không commit `.godot/`. Không push khi chưa được yêu cầu.
+- Branch: `<phase>/<task-id>-<slug>` chữ thường, ví dụ `phase-a/t006-pixel-grid`; thử nghiệm: `exp/<slug>`; việc không thuộc phase: `chore/<slug>`. Mỗi task một branch, không commit thẳng `main`.
+- Commit theo Conventional Commits: `<type>(<scope>): <summary>`; scope = task ID trong dự án, ví dụ `feat(T-012): add encounter manager`; type: `feat`/`fix`/`art`/`refactor`/`perf`/`chore`/`docs`. Summary tiếng Anh, imperative, ≤72 ký tự, không dấu chấm cuối; body gạch đầu dòng nêu lý do + validation (L1/L2/L3, exit code).
+- Stage theo path cụ thể, không `git add -A`; commit `.uid` cùng file mới; không commit `.godot/`.
+- Push: sau khi task DONE trên branch (validation xanh + commit) thì **push branch ngay** (user yêu cầu 2026-11-20); không push khi validation đỏ; không force-push `main`; hoàn tác bằng `revert`, không xóa lịch sử.

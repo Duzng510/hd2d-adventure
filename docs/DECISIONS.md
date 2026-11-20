@@ -16,6 +16,7 @@ Lịch sử quyết định. Quyết định bị thay thế đánh **Superseded
 | D-008 | 2026-11-20 | Technical | Khóa pixel-grid: ortho integer scale + camera snap + sprite visual snap; giữ FIXED_Y, mật độ texel cố định | Accepted |
 | D-009 | 2026-11-20 | Workflow | Waiver thoát Phase A khi L4 Not Run (user duyệt) | Accepted |
 | D-010 | 2026-11-20 | Product | Light Attack hướng theo mouse snapshot tại action_start | Accepted |
+| D-011 | 2026-11-20 | Workflow | Conventional Commits (scope = task ID) + push branch khi DONE | Accepted |
 
 ---
 
@@ -90,3 +91,10 @@ Lịch sử quyết định. Quyết định bị thay thế đánh **Superseded
 - **Reason:** User chốt 2026-11-20 qua lựa chọn "Mouse snapshot" — khớp reticle/aim Phase A (D-006) và GDD 5.3 (free aim bằng chuột).
 - **Alternatives considered:** Đánh theo facing L/R — loại vì bỏ free-aim; cập nhật hướng live trong startup/active — loại vì hitbox đổi hướng giữa swing, khó đọc và khó test.
 - **Consequences:** Đòn có thể đánh mọi hướng trên XZ (kể cả ngược sprite vì placeholder chỉ flip L/R) — readability hướng dọc/ngược đánh giá ở L4; hitbox reach trong `combat_tuning.tres`.
+
+## D-011 · 2026-11-20 · Workflow · Accepted
+
+- **Decision:** Commit theo **Conventional Commits** `<type>(<scope>): <summary>` với scope = task ID (ví dụ `feat(T-012): add encounter manager`). Giữ branch naming `<phase>/<task-id>-<slug>`, thêm `exp/<slug>` cho thử nghiệm và `chore/<slug>` cho việc lẻ. **Push branch ngay khi task DONE** (validation xanh + commit), không chờ yêu cầu.
+- **Reason:** User chỉ đạo 2026-11-20: "mỗi khi xong một branch thì push lên git" và cung cấp bộ quy ước Conventional Commits/branch naming/.gitignore để tham khảo.
+- **Alternatives considered:** Giữ format cũ `T-xxx <summary>` — bị thay theo yêu cầu; đổi branch naming sang `<type>/<name>` — không chọn vì mất traceability phase/task.
+- **Consequences:** Commit từ T-012 dùng format mới; `.godot/` tiếp tục không commit; không push khi validation đỏ; không force-push `main` (dùng `revert`). AGENTS.md cập nhật cùng ngày.
