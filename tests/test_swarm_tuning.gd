@@ -32,6 +32,17 @@ func _initialize() -> void:
 	_check(tuning.grunt_max_hp == 30 and tuning.grunt_damage == 15, "grunt regression hp/damage")
 	_check(tuning.grunt_telegraph_frames == 20, "grunt regression telegraph")
 	_check(absf(tuning.grunt_approach_speed - 2.5) < 0.0001, "grunt regression approach 2.5")
+	var swarm_node := Swarm.new()
+	swarm_node.tuning = tuning
+	_check(swarm_node._max_hp() == 20, "swarm node reads swarm hp")
+	_check(swarm_node._telegraph_frames() == tuning.swarm_telegraph_frames, "swarm node telegraph follows swarm tuning")
+	_check(swarm_node._damage() == 5, "swarm node damage 5")
+	_check(swarm_node._log_entity() == &"swarm", "swarm node logs entity swarm")
+	swarm_node.free()
+	var grunt_node := Grunt.new()
+	grunt_node.tuning = tuning
+	_check(grunt_node._max_hp() == 30 and grunt_node._log_entity() == &"grunt", "grunt node defaults unchanged")
+	grunt_node.free()
 	print("checks=%d failures=%d" % [_checks, _failures.size()])
 	for failure in _failures:
 		print("FAIL: %s" % failure)
