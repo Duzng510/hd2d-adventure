@@ -18,6 +18,7 @@ Lịch sử quyết định. Quyết định bị thay thế đánh **Superseded
 | D-010 | 2026-11-20 | Product | Light Attack hướng theo mouse snapshot tại action_start | Accepted |
 | D-011 | 2026-11-20 | Workflow | Conventional Commits (scope = task ID) + push branch khi DONE | Accepted |
 | D-012 | 2026-11-20 | Workflow | Waiver thoát Phase B khi B7 Failed (B7.3 spam 10/10 W); B7 giữ Failed | Accepted |
+| D-013 | 2026-11-20 | Product | Scope Phase C: 3 vai trò (Grunt+Swarm+Ranged), mini-boss 2 phase, reward shortcut + hồi máu | Accepted |
 
 ---
 
@@ -108,4 +109,11 @@ Lịch sử quyết định. Quyết định bị thay thế đánh **Superseded
 - **Lý do:** User quyết định chuyển tiếp với B7 Failed thay vì bổ sung cơ chế chống spam (GDD 6.8 mục 7) tại thời điểm này, sau khi đã xem số liệu T-016; trước đó user đã ghi nhận "chưa thêm cơ chế vội" (T-015). Không bỏ qua mù — measurement đầy đủ trước khi quyết định.
 - **Rủi ro được chấp nhận:** (1) Ở tuning hiện tại, spam đòn thường là chiến thuật thống trị — độ sâu combat theo GDD 6.8.7 chưa được chứng minh; (2) khi thêm cơ chế sau, số liệu balance/readability L4 (B5/B6) có thể phải đánh giá lại; (3) Phase B khép lại với một gate Failed được ghi nhận công khai.
 - **Phạm vi waiver:** Chỉ áp dụng cho bước thoát Phase B (sang Phase C theo roadmap); không miễn gate nào khác, không miễn MVS-AC, không đổi kết quả B7.3/B7. Cơ chế GDD 6.8.7 vẫn ở backlog; khi được thêm, B7.3 **phải test lại** bằng đúng harness spam và ghi kết quả vào evidence — waiver không miễn lần test lại này.
+
+## D-013 · 2026-11-20 · Product · Accepted
+
+- **Decision:** Scope Phase C (STRETCH, GDD 12): arena nhỏ 3 wave — Wave 1: 2 Grunt + 3 Swarm · Wave 2: 2 Swarm + 2 Ranged · Wave 3: mini-boss riêng 2 phase (chuyển tại HP ≤ 50%); reward = cổng shortcut mở + hồi máu full. Gate **C1–C3 + evidence E1–E5** theo `docs/phase-c/OPERATIONAL_DEFINITIONS.md` (CONFIRMED).
+- **Reason:** User chốt 2026-11-20 qua 3 lựa chọn mức đầy đủ (3 vai trò / boss riêng 2 phase / shortcut + heal) và xác nhận gate doc bằng "y". Hướng đã chốt từ trước: "design ambition, rollout theo giai đoạn" — chi phí chia nhỏ qua T-018…T-024 thay vì cắt scope.
+- **Alternatives considered:** 2 vai trò (Grunt+Ranged hoặc Grunt+Swarm) — loại, thiếu so với "nhiều enemy/vai trò" của GDD 12; boss 1 phase hoặc Elite Grunt — loại, silhouette kém đặc trưng hơn yêu cầu GDD 6.7; reward mở Heavy Attack (thêm cơ chế combat mới) hoặc chọn charm (thêm UI/choice) — loại, "reward đơn giản" của Phase C chỉ cần quan sát được.
+- **Consequences:** Không thêm physics layer; không pathfinding (Known Issue giữ nguyên); không đụng scene Phase A/B (arena mới). Nghĩa vụ treo: B7.3 vẫn phải retest bằng `run_b7_spam.tscn` khi cơ chế chống spam GDD 6.8.7 được thêm — Phase C không thêm cơ chế này. Reward shortcut + heal chưa phải bằng chứng cho MVS-AC6 (Phase D).
 - **Xác nhận của user:** "ghi waiver Phase B theo MP 8.6." (chat, 2026-11-20).
