@@ -1,0 +1,25 @@
+# T-026 self-marker capture — 2026-11-20T21:03Z
+
+## positive (no_depth_test ring)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.323 - Forward+ - Using Device #0: Intel - Intel(R) UHD Graphics
+SHOT user://t026_before.png (46607 lit px)
+SHOT user://t026_after.png (46607 lit px)
+CHECK PASS P26.1 both frames captured
+CHECK PASS P26.3 both frames really rendered (lit px 46607 / 46607)
+CHECK PASS P26.2 ring stays visible over the boss body (1280 px changed, need >= 40)
+checks=3 failures=0
+PASS t026_self_marker
+exit=0
+
+## negative control (ring depth-tested)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.323 - Forward+ - Using Device #0: Intel - Intel(R) UHD Graphics
+SHOT user://t026_before.png (46607 lit px)
+SHOT user://t026_after.png (46607 lit px)
+CHECK PASS P26.1 both frames captured
+CHECK PASS P26.3 both frames really rendered (lit px 46607 / 46607)
+CHECK PASS P26.2 control: depth-tested ring is hidden by the boss (0 px changed, got 0)
+checks=3 failures=0
+PASS t026_self_marker (control)
+exit=0
