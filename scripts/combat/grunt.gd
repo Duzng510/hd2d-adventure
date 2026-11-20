@@ -165,8 +165,8 @@ func _resolve_damage() -> void:
 		if not _registry.try_register(_attack_id, PLAYER_TARGET_ID):
 			continue
 		var applied := _player_combat.apply_hit(_damage())
-		_director.log_event(&"grunt", &"hit", _attack_id, PLAYER_TARGET_ID)
-		_director.log_event(&"grunt", &"damage", _attack_id, PLAYER_TARGET_ID, applied)
+		_director.log_event(_log_entity(), &"hit", _attack_id, PLAYER_TARGET_ID)
+		_director.log_event(_log_entity(), &"damage", _attack_id, PLAYER_TARGET_ID, applied)
 		_director.request_hitstop(tuning.hitstop_frames)
 
 
@@ -181,7 +181,7 @@ func _tick_flash() -> void:
 
 
 func _die() -> void:
-	_director.log_event(&"grunt", &"death", _attack_id)
+	_director.log_event(_log_entity(), &"death", _attack_id)
 	velocity = Vector3.ZERO
 	_body_mesh.visible = false
 	_telegraph.visible = false
