@@ -103,7 +103,7 @@ Rubric chủ quan một người, sample nhỏ → tín hiệu ban đầu, khôn
 | B4 Telegraph | Passed | B4.1 t011 CSV 20 frame; B4.2 t011 ảnh telegraph; B4.3 x/n = 5/5 hit trong 11 run hợp lệ (user báo hiểu 19/19 toàn session) | 2026-11-20 |
 | B5 10 runs | Passed | `evidence/b5/`: 13 run liền, 11 hợp lệ (2 run đứng yên chủ đích loại), 12 reset, 0 SCRIPT ERROR | 2026-11-20 |
 | B6 Readability | Passed | User chấm gộp 4/5 (mean 4.0); a/b/c = 11/11 mỗi câu (33/33); B6.3 ảnh t011 | 2026-11-20 |
-| B7 Two approaches | Failed | B7.1 `evidence/b7/` dodge run 20 Space, W; B7.2 11 run thắng áp sát; **B7.3 Fail** — spam 10/10 thắng (`evidence/b7/spam_*`), mỗi run ăn 1 hit mà không chết; passive 10/10 thua | 2026-11-20 |
+| B7 Two approaches | Failed | B7.1 `evidence/b7/` dodge run 20 Space, W; B7.2 11 run thắng áp sát; **B7.3 Fail** — spam 10/10 thắng (`evidence/b7/spam_*`), mỗi run ăn 1 hit mà không chết; passive 10/10 thua; thoát Phase B theo **D-012 waiver** (B7 giữ Failed) | 2026-11-20 |
 | D1–D3 Debug | Passed | D1 t010 ảnh off/on; D2 CSV có `alert`; D3 t012 cycles + capture | 2026-11-20 |
 
 ## 12. Thứ tự, overlap & exit
@@ -138,4 +138,4 @@ Build: nhánh `phase-b/t014-gate-evidence` (nền T-012 `fd3a031`). Session li�
 - **B7.1:** session riêng `evidence/b7/combat_log_dodge_run.csv`: 20 `input_dodge` (Space), 6 lần attack, 3 hit gây ra/2 hit nhận, **W** frame 1009 → dodge-rồi-phản-công hợp lệ.
 - **B7.2:** 11 run thắng có 3–6 attack, 0–1 hit nhận, đánh gần; user xác nhận có run né bằng WASD; đủ một run áp sát/chen recovery (user-reported).
 - **B7.3: Fail (T-016).** Harness `run_b7_spam.tscn`: chỉ request attack khi phase NONE, không dodge, không di chuyển, 10 run. Kết quả **10/10 W**, 87 tick/run, player nhận **1 hit/run** (15 dmg) mà không chết; log 30 hit player→Grunt, 10 hit Grunt→player, 0 player death, 10 `encounter_win` (`evidence/b7/spam_combat_log.csv` + `spam_summary.txt`). Passive control (không đánh) 10/10 L, 332 tick/run — chứng minh harness bắt được thua, không phải metric luôn xanh.
-- **Phase B exit: chưa đạt** — B7 Failed (B7.3); các gate còn lại Passed. Theo B7.3/GDD 6.8 mục 7: bổ sung **đúng một cơ chế** (ví dụ combo bị ngắt khi trúng đòn, hoặc đòn mạnh) rồi test lại, hoặc waiver MP 8.6. User chưa muốn thêm cơ chế tại thời điểm này.
+- **Phase B exit: chưa đạt** — B7 Failed (B7.3); các gate còn lại Passed. Theo B7.3/GDD 6.8 mục 7: bổ sung **đúng một cơ chế** (ví dụ combo bị ngắt khi trúng đòn, hoặc đòn mạnh) rồi test lại, hoặc waiver MP 8.6. User chưa muốn thêm cơ chế tại thời điểm này. **Cập nhật 2026-11-20:** Phase B exit chuyển tiếp theo **D-012 waiver** (MP 8.6, user duyệt trong chat); B7 giữ **Failed**; cơ chế GDD 6.8.7 ở backlog, B7.3 phải test lại khi cơ chế được thêm.

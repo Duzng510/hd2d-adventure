@@ -17,6 +17,7 @@ Lịch sử quyết định. Quyết định bị thay thế đánh **Superseded
 | D-009 | 2026-11-20 | Workflow | Waiver thoát Phase A khi L4 Not Run (user duyệt) | Accepted |
 | D-010 | 2026-11-20 | Product | Light Attack hướng theo mouse snapshot tại action_start | Accepted |
 | D-011 | 2026-11-20 | Workflow | Conventional Commits (scope = task ID) + push branch khi DONE | Accepted |
+| D-012 | 2026-11-20 | Workflow | Waiver thoát Phase B khi B7 Failed (B7.3 spam 10/10 W); B7 giữ Failed | Accepted |
 
 ---
 
@@ -98,3 +99,13 @@ Lịch sử quyết định. Quyết định bị thay thế đánh **Superseded
 - **Reason:** User chỉ đạo 2026-11-20: "mỗi khi xong một branch thì push lên git" và cung cấp bộ quy ước Conventional Commits/branch naming/.gitignore để tham khảo.
 - **Alternatives considered:** Giữ format cũ `T-xxx <summary>` — bị thay theo yêu cầu; đổi branch naming sang `<type>/<name>` — không chọn vì mất traceability phase/task.
 - **Consequences:** Commit từ T-012 dùng format mới; `.godot/` tiếp tục không commit; không push khi validation đỏ; không force-push `main` (dùng `revert`). AGENTS.md cập nhật cùng ngày.
+
+## D-012 · 2026-11-20 · Workflow · Accepted
+
+- **Decision:** Cho phép thoát Phase B theo quy tắc waiver MP 8.6 dù gate **B7 Failed** (B7.3). Waiver chỉ mở đường chuyển phase; B7 giữ nguyên **Failed**, không đổi nhãn hay hạ chuẩn bất kỳ gate nào.
+- **Tiêu chí chưa đạt:** Phase B exit = AND(B1–B7, D1–D3) (user xác nhận 2026-11-20, `OPERATIONAL_DEFINITIONS` §7/§11). B7.1/B7.2 Passed nhưng **B7.3 Fail**: chiến thuật spam thuần (chỉ attack khi phase NONE, không dodge, không di chuyển) thắng mọi run → gate B7 = **Failed**.
+- **Evidence/status:** T-016 harness `scenes/phase_b/run_b7_spam.tscn` + `scripts/phase_b/b7_spam_driver.gd`: **10/10 W**, 87 tick/run, player nhận 1 hit/run (15 dmg, không chết), 0 player death; passive control 10/10 L (332 tick/run) — `docs/phase-b/evidence/b7/spam_combat_log.csv` + `spam_summary.txt`. B7.1/B7.2 từ T-015 `evidence/b7/`; B1–B6, D1–D3 Passed. Gate status: **B7 Failed** (không đổi).
+- **Lý do:** User quyết định chuyển tiếp với B7 Failed thay vì bổ sung cơ chế chống spam (GDD 6.8 mục 7) tại thời điểm này, sau khi đã xem số liệu T-016; trước đó user đã ghi nhận "chưa thêm cơ chế vội" (T-015). Không bỏ qua mù — measurement đầy đủ trước khi quyết định.
+- **Rủi ro được chấp nhận:** (1) Ở tuning hiện tại, spam đòn thường là chiến thuật thống trị — độ sâu combat theo GDD 6.8.7 chưa được chứng minh; (2) khi thêm cơ chế sau, số liệu balance/readability L4 (B5/B6) có thể phải đánh giá lại; (3) Phase B khép lại với một gate Failed được ghi nhận công khai.
+- **Phạm vi waiver:** Chỉ áp dụng cho bước thoát Phase B (sang Phase C theo roadmap); không miễn gate nào khác, không miễn MVS-AC, không đổi kết quả B7.3/B7. Cơ chế GDD 6.8.7 vẫn ở backlog; khi được thêm, B7.3 **phải test lại** bằng đúng harness spam và ghi kết quả vào evidence — waiver không miễn lần test lại này.
+- **Xác nhận của user:** "ghi waiver Phase B theo MP 8.6." (chat, 2026-11-20).
