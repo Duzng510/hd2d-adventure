@@ -25,6 +25,7 @@ Action khai báo một lần trong `project.godot`; gameplay chỉ đọc action
 - **Runtime value:** `CombatTuning` (`scripts/combat/combat_tuning.gd`) + `scripts/combat/combat_tuning.tres` — giá trị đang chạy; sửa tuning = sửa `.tres`, không sửa logic.
 - **Validation envelope:** `tests/test_combat_tuning.gd` kiểm tra resource nằm trong khoảng HYPOTHESIS GDD 6.4 (startup 3–6, active 2–4, recovery 8–14, combo window 8–14, buffer 5–8, dodge i-frame 8–14 / tổng 18–28, hitstop 2–5, telegraph ≥18). Đây là **envelope tạm của prototype, không phải design-approved constraint** — muốn ra ngoài envelope phải cập nhật GDD/DECISIONS trước, không sửa test cho vừa.
 - Coverage: startup/active/recovery, combo window + combo hits, buffer, damage, reach; dodge i-frame/total/speed; hitstop; HP player/grunt; detect/attack range, approach speed, telegraph/active/recovery, damage của Grunt.
+- Tempo (T-027): `fatigue_free_swings` / `fatigue_step_frames` / `fatigue_max_frames` / `fatigue_decay_frames` — HYPOTHESIS, chỉ player; envelope test chưa đặt cho nhóm này, ràng buộc hiện là **luật thiết kế** `decay < cap` (§5) do harness `run_t027_tempo.tscn` giữ.
 - Swarm (Phase C): swarm_max_hp/telegraph/active/recovery/damage/approach/detect/attack_range — HYPOTHESIS gate doc §9; telegraph floor ≥18.
 - Ranged (Phase C): ranged_max_hp/min_range/max_range/approach/telegraph/active/recovery/damage/projectile speed/lifetime — HYPOTHESIS gate doc §9; telegraph 24 (floor ≥18); projectile lifetime ≤120 tick (2 s).
 - Boss (Phase C): boss_max_hp/detect/chase/phase threshold + switch, và theo từng đòn (smash/lunge/sweep) bộ telegraph/active/recovery (phase 1 + phase 2)/damage/radius-range — HYPOTHESIS gate doc §9; **mọi** telegraph ≥18; phase 2 nhanh hơn chỉ qua recovery, không hạ telegraph.
@@ -35,7 +36,7 @@ Action khai báo một lần trong `project.godot`; gameplay chỉ đọc action
 - `action_frame` bắt đầu từ 1 tại tick action start; chỉ thuộc action instance hiện tại.
 - Startup gồm đúng `startup_frames` frame inclusive: `action_frame` 1..S.
 - Active bắt đầu ở `action_frame = S + 1`, gồm đúng `active_frames` frame.
-- Recovery bắt đầu ở `S + A + 1`, gồm đúng `recovery_frames` frame.
+- Recovery bắt đầu ở `S + A + 1`, gồm đúng `recovery_frames + fatigue_frames` frame (T-027: `fatigue_frames` là mệt nhịp độ của player, **0** với enemy và với đòn còn trong định mức).
 - Hitbox ON trong active frames; OFF trước khi xử lý frame đầu tiên ngoài active window.
 - Ví dụ S=3, A=2:
 
@@ -66,6 +67,7 @@ Quy tắc:
 - Attack input trong startup/active được đệm; tự thực thi ở frame hợp lệ đầu tiên. Buffer hết hạn sau `input_buffer_frames` tick kể từ lúc capture — hết hạn thì huỷ.
 - Combo `light_combo_hits` hit; combo window = `combo_window_frames` đầu của recovery. Combo reset khi: hết recovery không continuation, dodge, nhận hit, chết, `encounter_reset`.
 - **Hướng đánh:** snapshot aim tại `action_start` (user chốt 2026-11-20: mouse snapshot) và cố định suốt swing; mouse di chuyển sau đó không đổi hướng đòn. Facing sprite flip theo dấu X của hướng snapshot.
+- **Mệt nhịp độ (T-027, D-019, chỉ player):** mỗi đòn liên tiếp vượt `fatigue_free_swings` cộng một cấp mệt, mỗi cấp thêm `fatigue_step_frames` vào recovery, trần `fatigue_max_frames`. Trả lại: `fatigue_decay_frames` tick liên tiếp ở Locomotion (không attack, không dodge) trừ một cấp; **dodge xoá toàn bộ**; `encounter_reset`/chết xoá toàn bộ. Startup, active window và combo window **không bao giờ đổi** — đây là cái giá mềm: mất nhịp, không mất điều khiển. Luật số đã đo: chu kỳ người chơi nhịp = `S+A+R+decay`, chu kỳ mash ở trần = `S+A+R+cap` ⇒ **phải giữ `decay < cap`** thì chơi nhịp mới thắng; `decay = cap` làm cơ chế vô nghĩa (đo: mash 3,48 đòn/100t > paced 3,27 khi decay = cap = 12).
 - Rooted: movement khóa trong toàn bộ Attack; aim/facing của đòn giữ snapshot.
 - Hitstop: **một** counter tập trung cho encounter (HitstopController), ownership duy nhất; overlap policy = **max remaining** (không cộng dồn); freeze mọi entity combat cùng tick; không dùng `Engine.time_scale`.
 
@@ -103,6 +105,7 @@ Quy tắc:
 - Projectile (T-020): `projectile_fire` entity `ranged` tại tick `active_start` (cùng `attack_id` của attack instance Ranged); `projectile_hit` entity `projectile`, `target_id` = 2 (player); `damage` cùng `attack_id`/`target_id`, `value` = damage áp dụng; `projectile_despawn` entity `projectile`, `value`: 1 = trúng player, 2 = chạm world/tường, 3 = hết lifetime (≤120 tick). Mỗi projectile damage tối đa 1 lần và despawn ngay sau hit.
 - Boss (T-021): mỗi đòn (smash/lunge/sweep) và phase switch là **một attack instance riêng** — `attack_id` tăng tại `telegraph_start`, schema `telegraph_start/telegraph_end/active_start/active_end` như Grunt, entity `boss`. `boss_phase` có `value` = số phase (2), log **đúng một lần** tại tick hoàn tất switch (kết thúc recovery của đòn SWITCH); SWITCH không gây damage nên không có `hit`/`damage`. Damage của boss dùng `target_id` = 2 (player).
 - `telegraph_start` tại frame telegraph đầu tiên; `telegraph_end` tại boundary tick kết thúc telegraph (cùng tick với `active_start`, log trước `active_start`). B4.1 đo `active_start.frame − telegraph_start.frame`.
+- `action_start` (T-027): `value` = số tick mệt mà đòn này trả (`fatigue_frames`, 0 khi còn trong định mức). Cột này là cách harness đọc mệt mà không phải parse state; `attack_id` vẫn là swing id, không đổi semantics cũ.
 - Swing miss vẫn log `active_end`; không bắt buộc `hit`/`damage`. Enemy attack có `attack_id` riêng cho **mỗi** telegraph/attack instance.
 - Diagnostic input→action_start = số tick engine-side (chỉ diagnostic; không đại diện input-to-display — GDD 6.4).
 

@@ -156,6 +156,17 @@ Lịch sử quyết định. Quyết định bị thay thế đánh **Superseded
 - **Nghĩa vụ treo mang sang Phase D:** retest B7.3 khi thêm cơ chế chống spam GDD 6.8.7 (D-012); MVS-AC1…8 vẫn PROPOSED; ngưỡng pass/fail cho MVS-AC2 chưa đặt.
 - **Xác nhận của user:** chọn "Đóng Phase C theo D-016" (chat, 2026-11-21) sau khi xem bảng 4 run và phép tính TTK.
 
+## D-019 · 2026-11-21 · Product · Accepted
+
+- **Decision:** Thêm **đúng một cơ chế** theo GDD 6.8.7 (nợ D-012): **mệt nhịp độ (attack tempo)** cho player. Mỗi đòn liên tiếp vượt định mức cộng thêm tick vào **recovery**; không bấm (hoặc né) trả lại tốc độ. **Không** stagger, **không** ngắt đòn khi trúng, **không** đổi damage/HP/telegraph của enemy, **không** áp dụng cho enemy.
+- **Reason:** User từ chối khung "bị khựng khi ăn đòn" và yêu cầu cái giá phải **mềm** (mất nhịp, không mất điều khiển). Số đo Phase C cho thấy cửa sổ phạt không bỏ trống (đính chính D-016), nên hướng xử lý đúng là đổi kinh tế nhịp của phía người chơi.
+- **Số chốt (combat_tuning.tres):** `fatigue_free_swings = 3` · `fatigue_step_frames = 4` · `fatigue_max_frames = 12` · `fatigue_decay_frames = 6`. Chu kỳ đòn: gốc 17 tick → có mệt 21/25/29 tick (trần ở cấp 3). Né xoá toàn bộ mệt; đứng/đi 6 tick trừ một cấp.
+- **Luật rút ra từ đo (phải giữ):** chu kỳ của người chơi nhịp = `17 + decay`, chu kỳ của người mash ở trần = `17 + cap`. ⇒ **chỉ khi `decay < cap` thì chơi nhịp mới thắng**; với decay = cap = 12, đo được mash 3,48 đòn/100 tick **cao hơn** paced 3,27 — cơ chế thành vô nghĩa. Đây là lý do decay là 6 chứ không phải 12.
+- **Bằng chứng (`docs/phase-c/evidence/t027/tempo_report.md`, deterministic, không RNG):** P27.1 cả hai policy đều gây damage (360 vs 420); P27.2 mash trả mệt 12 frame, paced trả 0; P27.3 paced đánh dày hơn ≥5% (3,85 vs 3,48 đòn/100 tick); P27.4 paced gây nhiều damage hơn trước khi chết (420 vs 360); P27.5 **exposure không đổi** (cả hai ăn đúng 21 đòn) vì boss đánh theo đồng hồ riêng. Negative control (định mức thành 100000): P27.2/P27.3/P27.4 đỏ, exit 1.
+- **Regression:** `test_combat_kernel` 107 checks (thêm 9 check timeline mệt), `test_tempo_fatigue` 15 checks, 14/14 unit test exit 0; `node tools/run_evidence.mjs` → `runs=7 negatives=7 ids=17 failures=0`; L1 các script đổi sửa exit 0, `--import` exit 0.
+- **Rủi ro được chấp nhận:** (1) **B7.3 vẫn Fail** — mỗi run spam cần ~5 đòn hạ Grunt, chỉ đòn thứ 5 trả mệt (`action_start,5,0,4` = 4 tick), thắng/thua không đổi (`runs=10 wins=10 ticks=87`); B7 giữ **Failed**, nợ D-012 còn nguyên và đã báo trước khi làm; (2) cơ chế chỉ đổi DPS, **không** đổi an toàn (P27.5: hai policy ăn đúng 21 đòn như nhau vì boss đánh theo đồng hồ riêng); (3) người chơi chưa có tín hiệu nhìn thấy rằng đòn đang chậm lại → cần một tell riêng (việc sau, không làm tiện tay ở đây); (4) mọi số DPS đã đo ở Phase C (D-018) là của build **chưa có mệt**, Phase D muốn dùng baseline phải đo lại.
+- **Xác nhận của user:** "mở T-27 đi" · "theo đòn liên tiếp đi" · "chỉ player" · "chọn A — chỉ recovery + cửa sổ combo, né xóa mệt" · "2" (hồi theo thời gian ở trạng thái NONE) · "C" (cap +12, trade-off thật) · "ok triển khai" (chat, 2026-11-21).
+
 ## D-017 · 2026-11-21 · Product · Accepted
 
 - **Decision:** Sửa bằng chứng "body boss che mất player" (T-026) bằng **vòng định vị player** (`SelfMarker`), không bằng cách fade thân enemy. Ring 0,9 m đặt dưới chân, vẽ xuyên vật thể (`no_depth_test` + `render_priority` trên material), màu `tunic` green nên không nhầm với telegraph đỏ hay reticle vàng.
