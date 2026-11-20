@@ -147,6 +147,15 @@ Lịch sử quyết định. Quyết định bị thay thế đánh **Superseded
 - **Xác nhận của user:** "Run 1: Read 5/5 Fair 5/5 / Run 2: Read 5/5 Fair 5/5 / Fun 4/5 — và: hai lần thua đó ... (do tôi chơi gà bị boss hành)" + "điều tra chỗ fps tụt xuống 19 với body boss che mất player đi, rồi tính tiếp lever nào" (chat, 2026-11-21).
 - **Đính chính (cùng ngày, sau T-026):** dòng "punish window mở 97 và 155 tick nhưng chỉ đổi được 6 và 3 đòn trúng" dùng **sai đơn vị** — 97/155 là **số mẫu** (mỗi mẫu 6 tick ≈ 582/930 tick thật), và vế "chỉ đổi được N đòn" so số đòn với số mẫu nên cho ra cảm giác "cửa sổ bỏ trống ~90%". Khi đo lại bằng damage (trace `boss_hp`) trên cả 8 run hợp lệ: cửa sổ RECOVERY chiếm **43–62% thời gian đánh boss** và **50–100% sát thương lên boss nằm trong đó** (pooled 64% pre-ring, 70% session3, 56% session4). Kết luận "cửa sổ chưa được dùng" là **sai**; các suy luận dựa trên nó (kể cả lựa chọn lever đã cân nhắc) phải đọc lại theo số mới. Không đổi nhãn gate nào ở trên — chỉ sửa cách đọc metric.
 
+## D-018 · 2026-11-21 · Workflow · Accepted
+
+- **Decision:** **Đóng Phase C** trên build `phase-c/t026-self-marker`, giữ nguyên waiver D-016 và mọi nhãn gate (C1 Not Run / C2 Incomplete / C3 Partial; E1–E5 + D1–D3 Passed). **Không đổi tham số combat nào** từ mẫu L4 này. Nút thắt đo được — throughput sát thương so với 300 HP boss — ghi thành **input bắt buộc** cho tuning Phase D, không xử lý tiện tay.
+- **Bằng chứng (8 run hợp lệ sau D-014: 2 trước ring, 6 sau ring):** 0 win; sát thương lên boss mỗi run 40–190/300; pooled DPS ≈ **4,8 dmg/s** ⇒ TTK ≈ **63 s**, trong khi run dài nhất chỉ sống tới 55 s; readable **36/36** đòn có ≥18 frame usable; 0 `SCRIPT ERROR`; dodge-ready lúc ăn đòn 43–80%; 78–90% đòn ăn xảy ra sát trụ/tường.
+- **Luật đã ghi trước khi đo (state §Next):** punish ≥25% mà vẫn thua → **metric cũ sai đơn vị, đã thay bằng damage-share và không còn áp dụng**; dodge-ready <50% → **không đạt**; boss HP left trung bình ≤120 → **không đạt (mean 237)**. Không có ngưỡng nào bị vượt nên theo MP 9 không tồn tại tuning hợp lệ trên mẫu này; mọi thay đổi số lúc này là **quyết định thiết kế**, phải ghi D riêng và đo trước/sau.
+- **Rủi ro được chấp nhận:** (1) Phase D không có win-baseline cho C1, nên mọi chỉnh độ khó đầu Phase D so sánh với con số 0/8; (2) độ khó encounter nhiều enemy mới có bằng chứng định tính; (3) D-017 chứng minh **readability**, không chứng minh đổi kết quả — nếu Phase D vẫn mất vị trí player thì quay lại fade enemy (ba gap cấu trúc đã ghi ở Known Issues).
+- **Nghĩa vụ treo mang sang Phase D:** retest B7.3 khi thêm cơ chế chống spam GDD 6.8.7 (D-012); MVS-AC1…8 vẫn PROPOSED; ngưỡng pass/fail cho MVS-AC2 chưa đặt.
+- **Xác nhận của user:** chọn "Đóng Phase C theo D-016" (chat, 2026-11-21) sau khi xem bảng 4 run và phép tính TTK.
+
 ## D-017 · 2026-11-21 · Product · Accepted
 
 - **Decision:** Sửa bằng chứng "body boss che mất player" (T-026) bằng **vòng định vị player** (`SelfMarker`), không bằng cách fade thân enemy. Ring 0,9 m đặt dưới chân, vẽ xuyên vật thể (`no_depth_test` + `render_priority` trên material), màu `tunic` green nên không nhầm với telegraph đỏ hay reticle vàng.
