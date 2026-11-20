@@ -1,6 +1,6 @@
 {
   "verdict": "E1-E5 PASSED",
-  "seconds": 52,
+  "seconds": 22,
   "evidence": {
     "E5.3": {
       "ok": true,
@@ -98,7 +98,7 @@
         "reason": "2 checks",
         "checks": 2,
         "summary": "",
-        "seconds": 10
+        "seconds": 5
       },
       {
         "name": "t019_swarm",
@@ -106,7 +106,7 @@
         "reason": "2 checks",
         "checks": 2,
         "summary": "",
-        "seconds": 4
+        "seconds": 2
       },
       {
         "name": "t020_ranged",
@@ -122,7 +122,7 @@
         "reason": "41 checks",
         "checks": 41,
         "summary": "checks=41 failures=0",
-        "seconds": 2
+        "seconds": 1
       },
       {
         "name": "t022_reward",
@@ -138,7 +138,7 @@
         "reason": "162 checks",
         "checks": 162,
         "summary": "windows=40 checks=162 failures=0 blocked=90 duplicates=0",
-        "seconds": 2
+        "seconds": 1
       },
       {
         "name": "t023_flow",
@@ -146,7 +146,7 @@
         "reason": "34 checks",
         "checks": 34,
         "summary": "runs=3 checks=34 failures=0 ticks=3361",
-        "seconds": 3
+        "seconds": 2
       }
     ],
     "negative": [
@@ -158,7 +158,7 @@
         "proves": null,
         "ok": true,
         "reason": "red on E5.3, flow.reset_state",
-        "seconds": 20
+        "seconds": 5
       },
       {
         "name": "t019_swarm",
@@ -168,7 +168,7 @@
         "proves": null,
         "ok": true,
         "reason": "red on E1.1, flow.reset_state",
-        "seconds": 2
+        "seconds": 1
       },
       {
         "name": "t023_onehit",
@@ -179,7 +179,7 @@
         "proves": "E1.4",
         "ok": true,
         "reason": "red on E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.3, E1.4, E1.4",
-        "seconds": 2
+        "seconds": 1
       },
       {
         "name": "t020_ranged",
@@ -220,7 +220,7 @@
         "proves": "E5.4",
         "ok": true,
         "reason": "red on E5.2, E5.1, E5.2, E5.2",
-        "seconds": 2
+        "seconds": 1
       }
     ],
     "failures": []
