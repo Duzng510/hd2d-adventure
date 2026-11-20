@@ -1,6 +1,6 @@
 # PHASE B — ĐỊNH NGHĨA VẬN HÀNH GATE
 
-> Trạng thái: **PROPOSED** (T-008, 2026-11-20; v2 tích hợp review) — cần user xác nhận **trước khi** đánh giá bất kỳ gate nào (luật như Phase A T-001). Nguồn gate: GDD 6.8; debug bắt buộc: MP 6.4. Giá trị tham số đọc từ `res://scripts/combat/combat_tuning.tres` (authoritative); khoảng GDD 6.4 chỉ là validation envelope tạm, không phải design-approved constraint.
+> Trạng thái: **CONFIRMED** — user xác nhận 2026-11-20 (chat "y" sau review v2). Gate Phase B chỉ được chấm theo bản này. Nguồn gate: GDD 6.8; debug bắt buộc: MP 6.4. Giá trị tham số đọc từ `res://scripts/combat/combat_tuning.tres` (authoritative); khoảng GDD 6.4 chỉ là validation envelope tạm, không phải design-approved constraint.
 
 ## 0. Quy tắc chung & trạng thái
 

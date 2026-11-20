@@ -1,7 +1,7 @@
 # COMBAT_SPEC — Phase B Combat Prototype
 
 > Tài liệu implementation, **subordinate GDD**: khi xung đột, GDD và xác nhận mới nhất của user thắng. Không nhân bản giá trị runtime — nguồn authoritative duy nhất của thông số là `res://scripts/combat/combat_tuning.tres`; GDD 6.4 chỉ là HYPOTHESIS.
-> Status: **PROPOSED** (T-008, 2026-11-20; v2 tích hợp review) — chờ user duyệt cùng OPERATIONAL_DEFINITIONS Phase B.
+> Status: **APPROVED** — user duyệt 2026-11-20 cùng T-008 (v2 tích hợp review).
 
 ## 1. Phạm vi Phase B
 
