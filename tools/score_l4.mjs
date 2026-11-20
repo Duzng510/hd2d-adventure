@@ -183,6 +183,7 @@ function engineLog(entries) {
 // how close cover was, plus boss state per sample, fps and a PNG per death.
 const PROBE_KINDS = new Set(['s', 'h', 'd', 'p']);
 const BOSS_RECOVERY = 4; // GruntAI.State { IDLE, CHASE, TELEGRAPH, ACTIVE, RECOVERY }
+const LAUNCH_FRAMES = 96; // samples up to here are warm-up: 19 fps at launch is not a play drop
 
 function parseProbe(text) {
 	const lines = text.replace(/\r\n?/g, '\n').split('\n').filter((line) => line.trim() !== '');
@@ -250,7 +251,12 @@ function attachProbe(runs, rows, events) {
 		const leads = group.hits.map((hit) => numberOr(hit.dreact, -1));
 		const breached = leads.filter((lead) => lead >= 0 && lead < TELEGRAPH_FLOOR).length;
 		const unknown = leads.filter((lead) => lead < 0).length;
-		const fps = group.samples.map((sample) => numberOr(sample.fps, 0)).filter((value) => value > 0);
+		// The first ~1.5 s of a launch is shader and asset warm-up, not play: it is
+		// reported separately so a 19 fps startup never reads as an in-fight drop.
+		const play = group.samples.filter((sample) => Number(sample.frame) > LAUNCH_FRAMES);
+		const fps = play.map((sample) => numberOr(sample.fps, 0)).filter((value) => value > 0);
+		const launch = group.samples.filter((sample) => Number(sample.frame) <= LAUNCH_FRAMES)
+			.map((sample) => numberOr(sample.fps, 0)).filter((value) => value > 0);
 		const recovery = group.samples.filter((sample) => numberOr(sample.boss_state, -1) === BOSS_RECOVERY);
 		const landed = events.filter((event) => event.event === 'damage' && event.entity === 'player'
 			&& event.frame >= run.startFrame && (run.endFrame === null || event.frame <= run.endFrame))
@@ -273,6 +279,7 @@ function attachProbe(runs, rows, events) {
 			hitsInRecovery: landed,
 			fpsMin: fps.length === 0 ? '-' : Math.min(...fps),
 			fpsMedian: median(fps),
+			fpsLaunchMin: launch.length === 0 ? '-' : Math.min(...launch),
 			shots: group.shots,
 		};
 		if (run.hitsTaken !== group.hits.length) {
@@ -288,11 +295,11 @@ function attachProbe(runs, rows, events) {
 function probeTable(runs) {
 	const rows = runs.filter((run) => run.probe !== undefined).map((run) => {
 		const probe = run.probe;
-		return `| ${run.index} | ${probe.hits} | ${probe.readable}/${probe.hits} | ${probe.minLead} | ${probe.moved} | ${probe.dodgeReady} | ${probe.cover} | ${probe.killer} | ${probe.bossHpLeft} | ${probe.hitsInRecovery}/${probe.recoveryTicks} | ${probe.fpsMin} / ${probe.fpsMedian} | ${probe.shots} |`;
+		return `| ${run.index} | ${probe.hits} | ${probe.readable}/${probe.hits} | ${probe.minLead} | ${probe.moved} | ${probe.dodgeReady} | ${probe.cover} | ${probe.killer} | ${probe.bossHpLeft} | ${probe.hitsInRecovery}/${probe.recoveryTicks} | ${probe.fpsMin} / ${probe.fpsMedian} (${probe.fpsLaunchMin}) | ${probe.shots} |`;
 	}).join('\n');
 	return `## What the rig measured so nobody has to remember (T-025 probe)
 
-| # | Hits | Readable (>= ${TELEGRAPH_FLOOR}f) | Min usable lead | Moved after telegraph | Dodge was ready | Taken at cover/wall | Killed by | Boss HP left | Hits in boss recovery | fps min / median | Death PNGs |
+| # | Hits | Readable (>= ${TELEGRAPH_FLOOR}f) | Min usable lead | Moved after telegraph | Dodge was ready | Taken at cover/wall | Killed by | Boss HP left | Hits in boss recovery | fps min / median (launch) | Death PNGs |
 |---|------|--------------------|-----------------|-----------------------|-----------------|---------------------|-----------|--------------|---------------------|------------------|--------------|
 ${rows}
 
@@ -313,9 +320,11 @@ function buildReport(source, events, runs, problems, engine, expectedRuns, probe
 	const measured = probe === null ? [] : runs.filter((run) => run.probe !== undefined && run.probe.hits > 0);
 	const readable = measured.reduce((sum, run) => sum + run.probe.readable, 0);
 	const fpsMin = measured.length === 0 ? null : Math.min(...measured.map((run) => run.probe.fpsMin).filter((value) => typeof value === 'number'));
+	const fpsMedian = measured.length === 0 ? '-' : Math.max(...measured.map((run) => run.probe.fpsMedian).filter((value) => typeof value === 'number'));
+	const fpsLaunchMin = measured.length === 0 ? '-' : Math.min(...measured.map((run) => run.probe.fpsLaunchMin).filter((value) => typeof value === 'number'));
 	const extraGate = probe === null ? [] : [
 		{ id: 'C2.2', text: `readable-share ${readable}/${measured.reduce((sum, run) => sum + run.probe.hits, 0)} hits had >= ${TELEGRAPH_FLOOR} usable telegraph frames - a proxy, the player's own "I understood" is still the numerator`, ok: measured.length > 0 && readable === measured.reduce((sum, run) => sum + run.probe.hits, 0) },
-		{ id: 'C3.3', text: fpsMin === null ? 'no probe samples with fps - diagnostic only, no gate threshold' : `fps min ${fpsMin} across ${measured.length} run(s) (diagnostic, no threshold)`, ok: true },
+		{ id: 'C3.3', text: fpsMin === null ? 'no probe samples with fps - diagnostic only, no gate threshold' : `play fps min ${fpsMin}, median ${fpsMedian}; launch warm-up min ${fpsLaunchMin} excluded (frames <= ${LAUNCH_FRAMES})`, ok: true },
 	];
 	const gate = [
 		{ id: 'C1.1', text: `${valid.length} valid run(s), ${expectedRuns} expected`, ok: valid.length >= expectedRuns },
@@ -367,6 +376,8 @@ ${problems.length === 0 ? 'none' : problems.map((line) => `- ${line}`).join('\n'
 			bossTelegraphMin: Math.min(...runs.map((run) => run.minBossTelegraph).filter(Number.isFinite), 999),
 			probeRows: probe === null ? 0 : probe.rows.length,
 			readableShare: `${readable}/${measured.reduce((sum, run) => sum + run.probe.hits, 0)}`,
+			fpsPlayMin: fpsMin === null ? '-' : fpsMin,
+			fpsLaunchMin: fpsLaunchMin,
 			scriptErrors: engine === null ? 'n/a' : engine.scriptErrors,
 		},
 		markdown,
@@ -469,7 +480,10 @@ function baseProbe(events, options = {}) {
 	const rows = [];
 	const hits = [];
 	for (let frame = 6; frame <= events[events.length - 1].frame; frame += 6) {
-		rows.push(probeRow({ frame, kind: 's', hp: 100, x: 0, z: 0, nearobs: 2, dodge: 1, swing: 0, boss_hp: -1, boss_state: -1, fps }));
+		rows.push(probeRow({
+			frame, kind: 's', hp: 100, x: 0, z: 0, nearobs: 2, dodge: 1, swing: 0,
+			boss_hp: -1, boss_state: -1, fps: frame <= 96 ? (options.launchFps ?? fps) : fps,
+		}));
 	}
 	for (const event of events) {
 		if (event.event === 'telegraph_start') telegraphs[`${event.entity}:${event.attackId}`] = event.frame;
@@ -506,6 +520,7 @@ const CASES = [
 	{ name: 'two-phase-flips', broken: 'boss_phase logged 2 times', events: () => cloneFirst(baseSession(1), (event) => event.event === 'boss_phase') },
 	{ name: 'no-reset-between-runs', broken: 'no encounter_reset before wave 1', events: () => baseSession(2).filter((event) => !(event.event === 'encounter_reset' && event.value === 1)) },
 	{ name: 'swarm-id-collision', broken: null, events: () => cloneFirst(baseSession(2), (event) => event.event === 'telegraph_start' && event.entity === 'grunt') },
+	{ name: 'probe-launch-noise', broken: null, expect: { readableShare: '7/7', fpsPlayMin: 60, fpsLaunchMin: 19 }, events: () => baseSession(2), probe: (events) => baseProbe(events, { launchFps: 19 }) },
 	{ name: 'probe-clean', broken: null, expect: { readableShare: '7/7' }, events: () => baseSession(2), probe: (events) => baseProbe(events) },
 	{ name: 'probe-unreadable', broken: `usable telegraph frames (< ${TELEGRAPH_FLOOR})`, events: () => baseSession(2), probe: (events) => baseProbe(events, { firstLead: TELEGRAPH_FLOOR - 9 }) },
 	{ name: 'probe-desync', broken: 'the two files are not the same session', events: () => baseSession(2), probe: (events) => baseProbe(events, { dropHits: 1 }) },
@@ -533,7 +548,9 @@ function selftest(wanted) {
 			const expected = item.expect ?? {};
 			const ok = problems.length === 0 && summary.valid === 3 && summary.wins === 2
 				&& (expected.probeRows === undefined || summary.probeRows === expected.probeRows)
-				&& (expected.readableShare === undefined || summary.readableShare === expected.readableShare);
+				&& (expected.readableShare === undefined || summary.readableShare === expected.readableShare)
+				&& (expected.fpsPlayMin === undefined || summary.fpsPlayMin === expected.fpsPlayMin)
+				&& (expected.fpsLaunchMin === undefined || summary.fpsLaunchMin === expected.fpsLaunchMin);
 			failures += ok ? 0 : 1;
 			console.log(`${ok ? 'ok  ' : 'FAIL'} ${item.name}: clean fixture measured valid=${summary.valid} wins=${summary.wins} violations=${problems.length}`);
 			for (const line of problems) console.log(`       unexpected red: ${line}`);

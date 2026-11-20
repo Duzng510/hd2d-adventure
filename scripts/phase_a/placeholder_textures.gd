@@ -88,6 +88,31 @@ static func _rect(img: Image, x: int, y: int, w: int, h: int, c: Color) -> void:
 			img.set_pixel(ix, iy, c)
 
 
+static func make_self_marker(diameter: float) -> ImageTexture:
+	# Player footprint ring (T-026): a tall enemy body standing over the sprite
+	# must not be able to hide where the player is. Tunic green so it is never
+	# mistaken for a telegraph disc or the yellow aim reticle.
+	var size := _texel_count(diameter)
+	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var center := (size - 1) * 0.5
+	var radius := size * 0.5
+	var ring: Color = PALETTE.tunic
+	var edge: Color = PALETTE.outline
+	for y in size:
+		for x in size:
+			var d := Vector2(x - center, y - center).length()
+			if d <= radius and d >= radius - 2.0:
+				img.set_pixel(x, y, ring)
+	for step in 4:
+		var angle := deg_to_rad(45.0 + 90.0 * step)
+		var tx := int(round(center + cos(angle) * (radius - 1.0)))
+		var ty := int(round(center + sin(angle) * (radius - 1.0)))
+		if tx >= 0 and tx < size and ty >= 0 and ty < size:
+			img.set_pixel(tx, ty, edge)
+	return ImageTexture.create_from_image(img)
+
+
 static func make_telegraph_disc(diameter: float) -> ImageTexture:
 	# Boss smash telegraph: filled danger disc, white mask tinted by the caller.
 	var size := _texel_count(diameter)
