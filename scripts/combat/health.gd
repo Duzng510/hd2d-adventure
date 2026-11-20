@@ -22,5 +22,13 @@ func is_dead() -> bool:
 	return hp <= 0
 
 
+func heal(amount: int) -> int:
+	if hp <= 0 or amount <= 0:
+		return 0
+	var applied := mini(amount, max_hp - hp)
+	hp += applied
+	return applied
+
+
 func reset() -> void:
 	hp = max_hp

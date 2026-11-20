@@ -6,6 +6,7 @@ extends Node
 ## per spawn and enemy_scenes maps each role to its scene. T-022 adds the reward.
 
 signal run_ended(won: bool)
+signal run_reset
 
 @export var tuning: CombatTuning
 @export var enemy_scenes: Dictionary = {}
@@ -70,7 +71,8 @@ func _physics_process(_delta: float) -> void:
 			if kernel.state == WaveKernel.State.WON:
 				_end_run(true)
 		WaveKernel.State.WON, WaveKernel.State.LOST:
-			if _end_frame >= 0 and _director.sim_frame - _end_frame >= reset_delay_frames:
+			# A win keeps the player in control so the opened gate stays walkable.
+			if kernel.state == WaveKernel.State.LOST and _end_frame >= 0 and _director.sim_frame - _end_frame >= reset_delay_frames:
 				reset_run()
 
 
@@ -114,6 +116,7 @@ func reset_run() -> void:
 	_end_frame = -1
 	runs_completed += 1
 	_director.log_event(&"encounter", &"encounter_reset", 0, 0, runs_completed)
+	run_reset.emit()
 	_start_run()
 
 
