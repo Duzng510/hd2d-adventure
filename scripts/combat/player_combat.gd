@@ -101,6 +101,14 @@ func attack_phase() -> AttackState.Phase:
 	return _attack.phase
 
 
+## Capture/debug hook: queue a light attack without hardware input.
+func debug_request_attack() -> void:
+	if health.is_dead():
+		return
+	_director.log_event(&"player", &"input_light")
+	_buffer.push(_combat_frame)
+
+
 func current_swing_id() -> int:
 	return _swing_id
 
@@ -241,6 +249,21 @@ func _aim_direction() -> Vector3:
 		if direction.length_squared() > 0.0001:
 			return direction.normalized()
 	return Vector3(float(_player.facing), 0.0, 0.0)
+
+
+func reset() -> void:
+	health.reset()
+	_attack.cancel()
+	_dodge.cancel()
+	_buffer.clear()
+	_registry.clear()
+	_hit_flash_frames = 0
+	_logged_death = false
+	_was_active = false
+	_set_active_visuals(false)
+	_set_locked(false, Vector3.ZERO)
+	if _sprite != null:
+		_sprite.modulate = Color.WHITE
 
 
 func is_invulnerable() -> bool:

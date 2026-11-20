@@ -93,6 +93,7 @@ Quy tắc:
 - CSV `user://combat_log.csv` + in từng dòng ra stdout. Header: `frame,entity,event,attack_id,target_id,value`.
 - `frame` = `sim_frame` monotonic (không reset khi R) · `attack_id` = ID của attack instance (không phải combo ID) · `target_id` khi event liên quan target · `value` theo convention từng event (damage amount, phase…), không chứa dữ liệu tùy ý.
 - Event bắt buộc: `input_light`, `input_dodge`, `action_start`, `active_start`, `active_end`, `hit`, `damage`, `telegraph_start`, `telegraph_end`, `alert`, `death`, `encounter_reset`.
+- Event encounter (T-012): `encounter_win`, `encounter_lose`; `encounter_reset` có `value` = số run đã hoàn tất.
 - `telegraph_start` tại frame telegraph đầu tiên; `telegraph_end` tại boundary tick kết thúc telegraph (cùng tick với `active_start`, log trước `active_start`). B4.1 đo `active_start.frame − telegraph_start.frame`.
 - Swing miss vẫn log `active_end`; không bắt buộc `hit`/`damage`. Enemy attack có `attack_id` riêng cho **mỗi** telegraph/attack instance.
 - Diagnostic input→action_start = số tick engine-side (chỉ diagnostic; không đại diện input-to-display — GDD 6.4).
@@ -111,8 +112,11 @@ Quy tắc:
 | Toggle hitbox/hurtbox | F1 + `DebugHitboxes` node (overlay đúng shape thật) |
 | Combat log có cấu trúc | §9 CSV |
 | Spawn/reset encounter nhanh | R (`encounter_reset`) |
+| Capture tất định (L3) | `aim_override_enabled`/`aim_override_point` + `debug_request_attack()` trên `PlayerCombat` — chỉ harness dùng, mặc định off |
 
 `encounter_reset` phải xoá: HP, vị trí, AI state, action phase, buffer/combo, HitRegistry, hitstop counter; log `encounter_reset`.
+
+Lý do có hook capture: coroutine `await physics_frame` resume ở đầu physics step, press/release quanh nó không bao giờ tới `_physics_process`; `debug_request_attack()` đẩy input vào buffer đúng `_combat_frame` nên kết quả tất định.
 
 ## 12. Tham chiếu
 
