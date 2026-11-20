@@ -1,0 +1,2 @@
+runs=10 wins=0 losses=10 ticks=[333, 332, 332, 332, 332, 332, 332, 332, 332, 332]
+PASS b7_passive: 10 losses, win detection cannot be trivially green
