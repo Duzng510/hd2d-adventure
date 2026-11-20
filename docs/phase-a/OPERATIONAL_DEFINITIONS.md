@@ -195,3 +195,27 @@ Offset = `camera.unproject_position(aim)` so với mouse → 0 mọi điểm: ma
 5. Residual ~300 px còn lại ở ortho_snap là viền reticle: reticle bám tia chuột nên dịch chuyển theo camera, không phải world tĩnh; không phải shimmer lưới.
 
 **Giới hạn:** shimmer đo bằng số + ảnh residual, chưa phải video; cảm nhận crawl khi chơi thật chờ L4. Sprite crawl mới có số, chưa xác nhận thị giác. fps HUD trong ảnh capture là artifact capture dày, đo thật ở L4.
+
+## 13. Kết quả T-007 — khóa lưới pixel theo D-008 Accepted (2026-11-20, AI-observed)
+
+**Điều kiện:** như mục 12; scene `capture_pixel.tscn`, 7 config × 24 frame. Bằng chứng: `evidence/pixel_t007/` (21 PNG đã xem + `pixel_log.csv` 168 dòng). Mặc định mới: ortho `texel_scale = 4` (size = H×0.05/4 = 9 tại 720p), `snap_to_pixel = true`, `visual_snap = true` (sprite). User chốt hướng **"Ortho + giữ FIXED_Y"** ngày 2026-11-20 → D-007/D-008 Accepted.
+
+**Sửa metric so với T-006:** cột crawl sprite nay đo `unproject_position(Sprite3D.global_position)` (vị trí hiển thị), không phải logic origin — bản T-006 đo nhầm logic nên không thấy tác dụng của visual snap. Hộp mask nay tâm theo sprite nên phủ cả reticle; residual vì vậy chỉ đo world + bóng.
+
+| Config | anchor_dev (px) | sprite_dev (px) | residual (px) |
+|---|---|---|---|
+| persp_nosnap | 0.4929 | 0.0000 | 18319 |
+| persp_snap | 0.4888 | 0.0591 | 19040 |
+| ortho10_nosnap | 0.4000 | 0.0000 | 9254 |
+| ortho10_snap | 0.0001 | 0.2000 | 398 |
+| ortho9_nosnap | 0.3334 | 0.0000 | 7916 |
+| ortho9_snap | 0.0000 | 0.3334 | 0 |
+| **ortho9_snap_spritesnap** | **0.0000** | **0.0000** | **0** |
+
+**Kết luận:**
+1. Gói đủ (ortho integer scale + camera snap + sprite visual snap) khóa lưới cả world lẫn sprite: `anchor_fx` và `sprite_fx` chỉ còn một giá trị 0.0000 suốt 24 frame; ảnh residual đen hoàn toàn.
+2. Thiếu visual snap thì sprite vẫn crawl 0.3334 px (config ortho9_snap) → metric phân biệt được có/không visual snap (fail-first).
+3. Texel giữ mật độ cố định **4.000 × 2.499 px** (aspect 0.6247) theo lựa chọn FIXED_Y của user — nhất quán mọi frame, không còn crawl; luật "texel vuông" được thay bằng "mật độ cố định" (D-008).
+4. Visual snap dịch sprite ≤0.5 px màn hình (~0.004 u world); ảnh `_a.png` cho thấy foot pivot vẫn chạm đất, telegraph không lệch.
+
+**Giới hạn:** số residual của config nosnap dao động vài % giữa các lần chạy (stall `save_png` làm lệch frame grab dưới `--fixed-fps`); tín hiệu khóa lưới đáng tin là `anchor_dev`/`sprite_dev` = 0.0000 chính xác và lặp lại. Cảm nhận chơi thật vẫn chờ L4.

@@ -2,7 +2,7 @@
 Cập nhật: 2026-11-20 (Project Day 2) | Commit: e4d819e (base main) | Branch: `phase-a/t006-pixel-grid` (T-006)
 
 ## Phase hiện tại
-Phase A — Visual & Camera Prototype. G1 pass (T-005); G2 math pass + 4/5 visual (T-003a); G3 pass cả 3 tình huống (T-003b); T-004 Art Spec user xác nhận (Gate 4), D-006 Accepted, ambient đen đã sửa. **T-006 DONE: đo pixel-grid + shimmer 6 config (renderer thật), metric residual biết FAIL trước; D-007 có số liệu, D-008 Proposed (gói khóa pixel-grid).** Còn: user chốt D-007/D-008, L4 playtest.
+Phase A — Visual & Camera Prototype. G1–G3 pass; Gate 4 user xác nhận; **D-007/D-008 Accepted (T-007): ortho scale 4 + camera snap + sprite visual snap + FIXED_Y; lưới pixel khóa cả world lẫn sprite (anchor_dev = sprite_dev = 0, residual 0 px)**. Gate 1–5 đủ điều kiện thoát Phase A; còn L4 playtest feel + user duyệt chuyển Phase B.
 
 ## Build: chạy được? (có/không) — cách chạy
 Có (scene load được). Scene chính: `res://scenes/phase_a/phase_a_playground.tscn`. **Chạy không cần mở editor: `run.bat` ở root, hoặc VSCode Ctrl+Shift+B (task "godot: run game", `.vscode/tasks.json`)**; phím trong game: WASD di chuyển, chuột aim, P đổi persp/ortho, L frame log. L2 Passed: headless `--quit-after 120`, EXIT=0, không lỗi. Visual G1–G3 + lighting đã xem thật (Vulkan 1.4.323 Forward+ / Intel UHD, 1280×720).
@@ -41,14 +41,17 @@ MVS-AC1…8 (GDD mục 0, PROPOSED): chưa kiểm chứng — chưa có build ch
   - `camera_rig.gd`: thêm `pixel_size`, `snap_to_pixel` (mặc định tắt, giữ hành vi G1–G3), `apply_mode()`, `px_per_unit()`. `debug_hud.gd`: thêm dòng readout texel/aspect/snap.
   - `capture_pixel.tscn` + `pixel_capture_driver.gd`: 6 config × 24 frame, CSV 144 dòng + 18 PNG (đã xem). L1 5 script EXIT=0, L2 playground EXIT=0, capture EXIT=0.
   - Kết quả: texel aspect 0.6247 mọi config (FIXED_Y + camera nghiêng); ortho9 = 4.000 px/texel ngang; snap khóa world crawl ortho (residual 7406→347) nhưng không cứu persp (18013→18681) và gây sprite crawl (player_dev 0→0.3334). OPERATIONAL_DEFINITIONS §12; D-008 Proposed.
+- T-007 implement D-008 Accepted (user chọn "Ortho + giữ FIXED_Y"):
+  - `camera_rig.gd`: ortho mặc định + `texel_scale = 4` (size tự theo viewport), `snap_to_pixel = true`, `process_priority = -1`, xử lý resize. `player_controller.gd`: `visual_snap` lượng tử hóa vị trí hiển thị sprite về integer px, logic giữ nguyên.
+  - Capture 7 config vào `evidence/pixel_t007/` (21 PNG đã xem + CSV 168 dòng); metric sửa sang đo sprite thay vì logic origin.
+  - Kết quả: config đủ gói `anchor_dev = sprite_dev = 0.0000`, residual 0 px; thiếu visual snap sprite crawl 0.3334 → metric fail-first. OPERATIONAL_DEFINITIONS §13. L1 3 script + L2 + L3 exit 0, capture exit 0.
 
 ## Đang làm (≤2)
-- (trống — chờ user chốt D-007/D-008)
+- (trống — chờ L4 playtest + user duyệt thoát Phase A)
 
 ## Next (3–5)
-- Chốt D-007 projection + D-008 gói pixel-grid: evidence T-006 đã có (ảnh + số, OPERATIONAL_DEFINITIONS §12), không cần bấm P đoán | Dep: user quyết
-- T-007 implement phần còn lại của D-008 (ortho integer scale mặc định + sprite visual snap + cách đặt sprite texel vuông) | Dep: D-007/D-008 Accepted
-- L4 human playtest feel (G1 movement + aim + occlusion fade) | Dep: build chơi được (run.bat), user chơi
+- L4 human playtest feel build Phase A (run.bat / Ctrl+Shift+B; WASD di chuyển, chuột aim, P đổi persp/ortho, L frame log) | Dep: user chơi
+- User duyệt thoát Phase A sang Phase B combat prototype (gate 1–5 đã đủ; thiếu L4 thì áp waiver Master Prompt 8.6) | Dep: user
 - Duyệt MVS-AC1…8 + đặt ngưỡng MVS-AC2 | Dep: user
 - (tuỳ chọn) Dọn 2 dòng cũ trong AGENTS.md ("Chưa có main scene", danh sách "Hiện có") | cần preview+y/n riêng
 
@@ -64,10 +67,10 @@ Phase B combat prototype (GDD 6.8) → Phase D MVS (field Verdant Frontier + dun
 - `quit()` trong SceneTree script không dừng ngay; phải dùng if/else một quit (đã ghi AGENTS.md).
 - **(G1) Ambient/shadow đen tuyệt đối: ĐÃ SỬA 2026-11-20 (T-004).** Nguyên nhân: `ambient_light_source=2` (COLOR) với `ambient_light_color` mặc định đen → đổi sang 3 (SKY). Xác nhận bằng `evidence/lighting/after_center.png` (mặt khuất hết đen).
 - **(G1, mới) Placeholder facing chỉ L/R:** chưa thể hiện hướng dọc → G1.2 facing-dọc Not Run; đánh giá lại sau Art Spec.
-- **(G1) Shimmer/crawl pixel: ĐÃ ĐO (T-006).** World crawl 0.33–0.49 px khi chưa snap; ortho+snap khóa được (residual −95%), persp thì không. Cảm nhận khi chơi thật vẫn chờ L4.
-- **(T-006, mới) Texel không vuông (aspect 0.6247)** ở mọi projection: billboard FIXED_Y + camera nghiêng 51.34°. Cần đổi cách đặt sprite (D-008 phần 4).
-- **(T-006, mới) Camera snap gây sprite crawl** (player_dev 0→0.3334 px): khóa lưới đầy đủ cần sprite visual snap tách logic (D-008 phần 3, chưa implement).
-- **(T-006, cấu trúc) Perspective không thể integer px/texel toàn cục** (4.458 tại player, 4.062 tại điểm xa) → luật pixel-grid chỉ thỏa với ortho.
+- **(G1) Shimmer/crawl pixel: ĐÃ ĐO (T-006) + ĐÃ KHÓA (T-007).** Gói ortho scale 4 + camera snap + sprite visual snap cho anchor_dev = sprite_dev = 0.0000, residual 0 px. Cảm nhận khi chơi thật vẫn chờ L4.
+- **(T-006→T-007, đóng) Sprite crawl do camera snap:** giải bằng `visual_snap` (lượng tử hóa vị trí hiển thị, logic nguyên); foot pivot lệch ≤0.004 u, ảnh đã xem.
+- **(T-006, chủ đích) Texel aspect 0.6247 (4.000×2.499 px):** không còn là lỗi mở — user chọn giữ FIXED_Y, luật đổi thành mật độ cố định (D-008 Accepted).
+- **(T-006, đóng) Perspective không integer px/texel toàn cục:** đóng bằng lựa chọn ortho (D-007 Accepted); persp chỉ còn là chế độ so sánh qua P.
 - **(G1, diagnostic) Latency 1 frame** `action_press`→movement (một phần do thứ tự node player trước driver); Phase B combat log đo chính thức.
 - **(G2, mới) Reticle bị geometry cao che** (left edge): điểm ngắm dưới đất sau Block không đọc được → G2.2 fail visibility; quy tắc occlusion G3 phải giải.
 - **(G2, mới) Reticle dưới chân player bị sprite che một phần** (center): readability khi ngắm vào chính mình.
@@ -75,8 +78,8 @@ Phase B combat prototype (GDD 6.8) → Phase D MVS (field Verdant Frontier + dun
 - **(G3, đánh đổi) Fade làm vật che ghostly** (mất cảm giác đặc); cần user chốt + cân nhắc outline khi fade. Ray đơn tâm player có thể sót che một phần.
 
 ## DONE gần đây (≤5)
+- T-007 | Implement D-008 Accepted: ortho scale 4 mặc định + camera snap + sprite visual snap | DONE 2026-11-20 — lưới khóa world+sprite (dev 0.0000, residual 0); 21 PNG đã xem; D-007/D-008 Accepted.
 - T-006 | Đo pixel-grid + shimmer 6 config, harness residual biết FAIL trước | DONE 2026-11-20 (branch phase-a/t006-pixel-grid) — L1/L2/L3 Passed, 18 PNG đã xem; D-007 có số liệu, D-008 Proposed.
 - T-004 | Art Spec (Gate 4 user xác nhận) + D-006 Accepted/D-007 Proposed + lighting ambient fix + run.bat/.vscode | DONE 2026-11-20 — ambient hết đen (ảnh đối chiếu); run không cần editor.
 - T-003b | Occlusion rule (fade) + đánh giá G3 | DONE 2026-11-20 — G3.1–3 Pass (before/after renderer thật); giải G2.2 left; quy tắc nay Accepted (D-006).
-- T-003a | Aim marker + đánh giá G2 mouse aim | DONE 2026-11-20 — L1/L2/L3 Passed; G2 math pass (offset 0), 4/5 visual pass, left fail visibility → đã giải bởi fade.
 - T-005 | Capture + đánh giá gate G1 movement (renderer thật) | DONE 2026-11-20 — L3 Passed G1.1–G1.4 movement/camera (AI-observed, 7 PNG + CSV); facing dọc/shimmer Not Run; 2 visual Known Issues mới.

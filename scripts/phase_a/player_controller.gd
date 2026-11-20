@@ -2,10 +2,19 @@ class_name PlayerController
 extends CharacterBody3D
 
 @export var speed: float = 4.0
+@export var visual_snap: bool = true
+@export var camera_path: NodePath = NodePath("../CameraRig")
 
 var facing: int = 1
 
 @onready var _sprite: Sprite3D = $Sprite3D
+@onready var _camera: CameraRig = get_node(camera_path)
+
+var _sprite_offset := Vector3.ZERO
+
+
+func _ready() -> void:
+	_sprite_offset = _sprite.position
 
 
 func _physics_process(_delta: float) -> void:
@@ -14,3 +23,16 @@ func _physics_process(_delta: float) -> void:
 	facing = MovementModel.compute_facing(input_vector, facing)
 	_sprite.flip_h = facing < 0
 	move_and_slide()
+	_update_sprite_visual()
+
+
+## Keep the sprite's texel grid on whole screen pixels; logic position stays continuous.
+func _update_sprite_visual() -> void:
+	if not visual_snap:
+		_sprite.position = _sprite_offset
+		return
+	var desired := global_position + _sprite_offset
+	var screen := _camera.unproject_position(desired)
+	var d := (screen.round() - screen) / _camera.px_per_unit()
+	var b := _camera.global_transform.basis
+	_sprite.global_position = desired + b.x * d.x - b.y * d.y

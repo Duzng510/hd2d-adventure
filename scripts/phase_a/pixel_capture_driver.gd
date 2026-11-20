@@ -1,14 +1,14 @@
 extends Node
 
-## T-006 pixel-grid + shimmer capture. Run with a real renderer:
+## T-006/T-007 pixel-grid + shimmer capture. Run with a real renderer:
 ## <GODOT> --path . res://scenes/phase_a/capture_pixel.tscn --resolution 1280x720 --fixed-fps 60
 ##
 ## Shimmer metric: translate frame B by the rounded world screen shift and diff
 ## against frame A. Residual changed pixels = sub-pixel crawl (not rigid motion).
 ## HUD and the player/telegraph box are masked out, so the residual is world-only;
-## sprite crawl is measured separately via the player's fractional screen position.
+## sprite crawl is measured separately via the sprite's fractional screen position.
 
-const EVIDENCE_DIR := "res://docs/phase-a/evidence/pixel/"
+const EVIDENCE_DIR := "res://docs/phase-a/evidence/pixel_t007/"
 const ANCHOR := Vector3(6.0, 0.0, -2.0)
 const MOTION_FRAMES := 24
 const GRAB_A := 10
@@ -18,15 +18,17 @@ const PLAYER_MASK_HALF := 180.0
 const DIFF_THRESHOLD := 8
 
 const CONFIGS := [
-	{"name": "persp_nosnap", "ortho": false, "size": 10.0, "snap": false},
-	{"name": "persp_snap", "ortho": false, "size": 10.0, "snap": true},
-	{"name": "ortho10_nosnap", "ortho": true, "size": 10.0, "snap": false},
-	{"name": "ortho10_snap", "ortho": true, "size": 10.0, "snap": true},
-	{"name": "ortho9_nosnap", "ortho": true, "size": 9.0, "snap": false},
-	{"name": "ortho9_snap", "ortho": true, "size": 9.0, "snap": true},
+	{"name": "persp_nosnap", "ortho": false, "scale": 0, "size": 10.0, "snap": false, "sprite": false},
+	{"name": "persp_snap", "ortho": false, "scale": 0, "size": 10.0, "snap": true, "sprite": false},
+	{"name": "ortho10_nosnap", "ortho": true, "scale": 0, "size": 10.0, "snap": false, "sprite": false},
+	{"name": "ortho10_snap", "ortho": true, "scale": 0, "size": 10.0, "snap": true, "sprite": false},
+	{"name": "ortho9_nosnap", "ortho": true, "scale": 4, "size": 10.0, "snap": false, "sprite": false},
+	{"name": "ortho9_snap", "ortho": true, "scale": 4, "size": 10.0, "snap": true, "sprite": false},
+	{"name": "ortho9_snap_spritesnap", "ortho": true, "scale": 4, "size": 10.0, "snap": true, "sprite": true},
 ]
 
 var _player: PlayerController
+var _sprite: Sprite3D
 var _camera: CameraRig
 var _log: FileAccess
 
@@ -34,9 +36,10 @@ var _log: FileAccess
 func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(EVIDENCE_DIR)
 	_player = get_node("../PhaseAPlayground/Player")
+	_sprite = get_node("../PhaseAPlayground/Player/Sprite3D")
 	_camera = get_node("../PhaseAPlayground/CameraRig")
 	_log = FileAccess.open(EVIDENCE_DIR + "pixel_log.csv", FileAccess.WRITE)
-	_log.store_line("config,frame,ppu,texel_w,texel_h,aspect,engine_texel_w,anchor_fx,anchor_fy,player_fx,player_fy,cam_x,cam_z")
+	_log.store_line("config,frame,ppu,texel_w,texel_h,aspect,engine_texel_w,anchor_fx,anchor_fy,sprite_fx,sprite_fy,cam_x,cam_z")
 	_run()
 
 
@@ -44,13 +47,15 @@ func _run() -> void:
 	for cfg in CONFIGS:
 		await _capture_config(cfg)
 	_log.close()
-	print("T-006 pixel capture done: %d configs -> %s" % [CONFIGS.size(), EVIDENCE_DIR])
+	print("T-007 pixel capture done: %d configs -> %s" % [CONFIGS.size(), EVIDENCE_DIR])
 	get_tree().quit(0)
 
 
 func _capture_config(cfg: Dictionary) -> void:
+	_camera.texel_scale = cfg.scale
 	_camera.ortho_size = cfg.size
 	_camera.snap_to_pixel = cfg.snap
+	_player.visual_snap = cfg.sprite
 	_camera.apply_mode(CameraRig.ProjectionMode.ORTHOGRAPHIC if cfg.ortho else CameraRig.ProjectionMode.PERSPECTIVE)
 	_release_all()
 	_player.global_position = Vector3.ZERO
@@ -72,7 +77,7 @@ func _capture_config(cfg: Dictionary) -> void:
 	for i in MOTION_FRAMES:
 		await _step()
 		var anchor := _camera.unproject_position(ANCHOR)
-		var pscreen := _camera.unproject_position(_player.global_position)
+		var pscreen := _camera.unproject_position(_sprite.global_position)
 		var afrac := _frac(anchor)
 		var pfrac := _frac(pscreen)
 		if i == 0:
@@ -109,7 +114,7 @@ func _capture_config(cfg: Dictionary) -> void:
 			residual = _save_residual(prev_img, cur, Vector2i((anchor - prev_anchor).round()), (prev_player + pscreen) * 0.5, cfg.name)
 
 	Input.action_release(&"move_right")
-	print("%s: ppu=%.3f texel=%.3fx%.3f aspect=%.4f | anchor_dev=%.4f,%.4f player_dev=%.4f,%.4f | residual_px=%d" % [
+	print("%s: ppu=%.3f texel=%.3fx%.3f aspect=%.4f | anchor_dev=%.4f,%.4f sprite_dev=%.4f,%.4f | residual_px=%d" % [
 		cfg.name, ppu, texel.x, texel.y, texel.y / texel.x, anchor_dev.x, anchor_dev.y,
 		player_dev.x, player_dev.y, residual,
 	])

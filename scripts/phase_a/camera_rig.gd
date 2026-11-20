@@ -6,18 +6,24 @@ enum ProjectionMode { PERSPECTIVE, ORTHOGRAPHIC }
 @export var target_path: NodePath = NodePath("../Player")
 @export var offset: Vector3 = Vector3(0.0, 10.0, 8.0)
 @export var perspective_fov: float = 35.0
+## Manual ortho size, used only when texel_scale <= 0 (comparison mode).
 @export var ortho_size: float = 10.0
 @export var follow_smoothing: float = 0.0
 @export var pixel_size: float = 0.05
-@export var snap_to_pixel: bool = false
+## Integer screen px per texel horizontally; derives ortho size from viewport height.
+@export var texel_scale: int = 4
+@export var snap_to_pixel: bool = true
 
-var mode: ProjectionMode = ProjectionMode.PERSPECTIVE
+var mode: ProjectionMode = ProjectionMode.ORTHOGRAPHIC
 
 var _target: Node3D
 
 
 func _ready() -> void:
+	# Camera must settle before the player's visual snap reads its transform.
+	process_priority = -1
 	_target = get_node(target_path)
+	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	_apply_projection()
 	_update_position(0.0)
 
@@ -42,7 +48,18 @@ func _apply_projection() -> void:
 		fov = perspective_fov
 	else:
 		projection = Camera3D.PROJECTION_ORTHOGONAL
-		size = ortho_size
+		size = _ortho_size_for_viewport()
+
+
+func _ortho_size_for_viewport() -> float:
+	if texel_scale <= 0:
+		return ortho_size
+	return PixelGrid.ortho_size_for_scale(get_viewport().get_visible_rect().size.y, pixel_size, texel_scale)
+
+
+func _on_viewport_size_changed() -> void:
+	if mode == ProjectionMode.ORTHOGRAPHIC:
+		size = _ortho_size_for_viewport()
 
 
 func _update_position(delta: float) -> void:
