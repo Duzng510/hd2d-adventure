@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3]
+[gd_scene load_steps=32 format=3]
 
 [ext_resource type="Script" path="res://scripts/phase_a/playground.gd" id="1_play"]
 [ext_resource type="Script" path="res://scripts/phase_a/player_controller.gd" id="2_player"]
@@ -8,7 +8,7 @@
 [ext_resource type="Script" path="res://scripts/phase_a/occlusion_fader.gd" id="6_fade"]
 [ext_resource type="Script" path="res://scripts/combat/combat_director.gd" id="7_director"]
 [ext_resource type="Script" path="res://scripts/combat/player_combat.gd" id="8_pcombat"]
-[ext_resource type="Script" path="res://scripts/combat/training_dummy.gd" id="9_dummy"]
+[ext_resource type="Script" path="res://scripts/combat/grunt.gd" id="12_grunt"]
 [ext_resource type="Script" path="res://scripts/combat/debug_hitboxes.gd" id="10_debughit"]
 [ext_resource type="Resource" path="res://scripts/combat/combat_tuning.tres" id="11_tuning"]
 
@@ -65,11 +65,17 @@ size = Vector3(1.4, 0.8, 0.8)
 [sub_resource type="BoxShape3D" id="HurtboxShape"]
 size = Vector3(0.7, 1.6, 0.7)
 
-[sub_resource type="BoxShape3D" id="DummyShape"]
+[sub_resource type="BoxShape3D" id="GruntHurtShape"]
 size = Vector3(0.8, 1.6, 0.8)
 
-[sub_resource type="BoxMesh" id="DummyMesh"]
+[sub_resource type="BoxMesh" id="GruntMesh"]
 size = Vector3(0.8, 1.6, 0.8)
+
+[sub_resource type="BoxShape3D" id="GruntAttackShape"]
+size = Vector3(1.3, 0.9, 0.9)
+
+[sub_resource type="QuadMesh" id="GruntTelegraphMesh"]
+size = Vector2(1.6, 1.6)
 
 [sub_resource type="BoxMesh" id="SwingMesh"]
 size = Vector3(1.4, 0.08, 0.7)
@@ -181,19 +187,44 @@ mesh = SubResource("SwingMesh")
 script = ExtResource("8_pcombat")
 tuning = ExtResource("11_tuning")
 
-[node name="TrainingDummy" type="Area3D" parent="." groups=["enemy_hurtbox"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, 0)
+[node name="Grunt" type="CharacterBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 0)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("12_grunt")
+tuning = ExtResource("11_tuning")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Grunt"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("PlayerShape")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Grunt"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+mesh = SubResource("GruntMesh")
+
+[node name="Telegraph" type="MeshInstance3D" parent="Grunt"]
+transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0.03, 0)
+visible = false
+mesh = SubResource("GruntTelegraphMesh")
+
+[node name="Hurtbox" type="Area3D" parent="Grunt" groups=["enemy_hurtbox"]]
 collision_layer = 32
 collision_mask = 0
-script = ExtResource("9_dummy")
+monitoring = false
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="TrainingDummy"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Grunt/Hurtbox"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
-shape = SubResource("DummyShape")
+shape = SubResource("GruntHurtShape")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="TrainingDummy"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
-mesh = SubResource("DummyMesh")
+[node name="AttackHitbox" type="Area3D" parent="Grunt" groups=["enemy_attack"]]
+collision_layer = 8
+collision_mask = 16
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Grunt/AttackHitbox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.65, 0.8, 0)
+shape = SubResource("GruntAttackShape")
 
 [node name="CameraRig" type="Camera3D" parent="."]
 script = ExtResource("3_cam")
