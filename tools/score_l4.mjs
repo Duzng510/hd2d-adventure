@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, readdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import os from 'node:os';
@@ -177,16 +177,152 @@ function engineLog(entries) {
 	return out;
 }
 
-function buildReport(source, events, runs, problems, engine, expectedRuns) {
+// The probe sidecar (T-025) is what removes the player's memory from the loop:
+// for every hit it recorded how many usable telegraph frames there were (raw
+// gap minus hitstop), whether the player moved after it, whether dodge was up,
+// how close cover was, plus boss state per sample, fps and a PNG per death.
+const PROBE_KINDS = new Set(['s', 'h', 'd', 'p']);
+const BOSS_RECOVERY = 4; // GruntAI.State { IDLE, CHASE, TELEGRAPH, ACTIVE, RECOVERY }
+
+function parseProbe(text) {
+	const lines = text.replace(/\r\n?/g, '\n').split('\n').filter((line) => line.trim() !== '');
+	const problems = [];
+	if (lines.length === 0) return { rows: [], problems: ['empty probe file'] };
+	const header = lines[0].split(',');
+	for (const column of ['frame', 'kind', 'dreact']) {
+		if (!header.includes(column)) problems.push(`probe header has no '${column}' column - wrong rig version?`);
+	}
+	const rows = [];
+	for (let index = 1; index < lines.length; index += 1) {
+		const cells = lines[index].split(',');
+		const row = {};
+		header.forEach((column, position) => { row[column] = cells[position] ?? ''; });
+		if (!Number.isInteger(Number(row.frame))) {
+			problems.push(`probe line ${index + 1} has no integer frame: "${lines[index]}"`);
+			continue;
+		}
+		rows.push(row);
+	}
+	return { rows, problems };
+}
+
+function numberOr(value, fallback) {
+	const parsed = Number(value);
+	return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function share(part, whole) {
+	return whole === 0 ? '-' : `${Math.round((part / whole) * 100)}%`;
+}
+
+function median(values) {
+	if (values.length === 0) return '-';
+	const sorted = [...values].sort((left, right) => left - right);
+	return sorted[Math.floor(sorted.length / 2)];
+}
+
+// Assigns probe rows to runs by frame window, then reduces them. Windows are
+// half-open against the next run's start, so the ticks between a death and its
+// reset still belong to the run that died.
+function attachProbe(runs, rows, events) {
+	const starts = runs.map((run) => run.startFrame);
+	const groups = runs.map((run, index) => ({
+		run,
+		low: starts[index],
+		high: index + 1 < starts.length ? starts[index + 1] - 1 : Number.POSITIVE_INFINITY,
+		samples: [],
+		hits: [],
+		deaths: [],
+		shots: 0,
+	}));
+	for (const row of rows) {
+		if (!PROBE_KINDS.has(row.kind)) continue;
+		const group = groups.find((candidate) => Number(row.frame) >= candidate.low && Number(row.frame) <= candidate.high);
+		if (group === undefined) continue;
+		if (row.kind === 's') group.samples.push(row);
+		else if (row.kind === 'h') group.hits.push(row);
+		else if (row.kind === 'd') group.deaths.push(row);
+		else if (row.kind === 'p') group.shots += 1;
+	}
+	const problems = [];
+	for (const group of groups) {
+		const { run } = group;
+		const leads = group.hits.map((hit) => numberOr(hit.dreact, -1));
+		const breached = leads.filter((lead) => lead >= 0 && lead < TELEGRAPH_FLOOR).length;
+		const unknown = leads.filter((lead) => lead < 0).length;
+		const fps = group.samples.map((sample) => numberOr(sample.fps, 0)).filter((value) => value > 0);
+		const recovery = group.samples.filter((sample) => numberOr(sample.boss_state, -1) === BOSS_RECOVERY);
+		const landed = events.filter((event) => event.event === 'damage' && event.entity === 'player'
+			&& event.frame >= run.startFrame && (run.endFrame === null || event.frame <= run.endFrame))
+			.filter((event) => {
+				const before = group.samples.filter((sample) => Number(sample.frame) <= event.frame).pop();
+				return before !== undefined && numberOr(before.boss_state, -1) === BOSS_RECOVERY;
+			}).length;
+		run.probe = {
+			hits: group.hits.length,
+			readable: leads.filter((lead) => lead >= TELEGRAPH_FLOOR).length,
+			breached,
+			unknown,
+			minLead: leads.filter((lead) => lead >= 0).length === 0 ? '-' : Math.min(...leads.filter((lead) => lead >= 0)),
+			moved: share(group.hits.filter((hit) => hit.moved === '1').length, group.hits.length),
+			dodgeReady: share(group.hits.filter((hit) => hit.dodge === '1').length, group.hits.length),
+			cover: share(group.hits.filter((hit) => hit.nearobs === '1').length, group.hits.length),
+			killer: group.deaths.length === 0 ? '-' : String(group.deaths[0].src),
+			bossHpLeft: group.deaths.length === 0 ? '-' : numberOr(group.deaths[0].boss_hp, -1),
+			recoveryTicks: recovery.length,
+			hitsInRecovery: landed,
+			fpsMin: fps.length === 0 ? '-' : Math.min(...fps),
+			fpsMedian: median(fps),
+			shots: group.shots,
+		};
+		if (run.hitsTaken !== group.hits.length) {
+			problems.push(`run ${run.index}: probe saw ${group.hits.length} hit(s) but the combat log has ${run.hitsTaken} - the two files are not the same session`);
+		}
+		if (breached > 0) problems.push(`run ${run.index}: ${breached} hit(s) landed with only ${run.probe.minLead} usable telegraph frames (< ${TELEGRAPH_FLOOR})`);
+		if (unknown > 0) problems.push(`run ${run.index}: ${unknown} hit(s) had no telegraph record at all`);
+		if (group.deaths.length > 1) problems.push(`run ${run.index}: ${group.deaths.length} death rows in one run`);
+	}
+	return problems;
+}
+
+function probeTable(runs) {
+	const rows = runs.filter((run) => run.probe !== undefined).map((run) => {
+		const probe = run.probe;
+		return `| ${run.index} | ${probe.hits} | ${probe.readable}/${probe.hits} | ${probe.minLead} | ${probe.moved} | ${probe.dodgeReady} | ${probe.cover} | ${probe.killer} | ${probe.bossHpLeft} | ${probe.hitsInRecovery}/${probe.recoveryTicks} | ${probe.fpsMin} / ${probe.fpsMedian} | ${probe.shots} |`;
+	}).join('\n');
+	return `## What the rig measured so nobody has to remember (T-025 probe)
+
+| # | Hits | Readable (>= ${TELEGRAPH_FLOOR}f) | Min usable lead | Moved after telegraph | Dodge was ready | Taken at cover/wall | Killed by | Boss HP left | Hits in boss recovery | fps min / median | Death PNGs |
+|---|------|--------------------|-----------------|-----------------------|-----------------|---------------------|-----------|--------------|---------------------|------------------|--------------|
+${rows}
+
+\`usable lead\` is the raw telegraph gap minus the hitstop ticks frozen for both
+fighters, so it is what a human actually had. \`Hits in boss recovery\` counts the
+player's damage rows that landed while the sampled boss state was RECOVERY - the
+punish window, used over open. fps comes from the probe's own samples, so C3.3
+needs no HUD reading; in a \`--fixed-fps\` capture it is meaningless by definition.
+`;
+}
+
+function buildReport(source, events, runs, problems, engine, expectedRuns, probe) {
 	const valid = runs.filter((run) => run.resetBefore && run.resetAfter && run.result !== null);
 	const wins = valid.filter((run) => run.result === 'W').length;
 	const hitsTaken = valid.reduce((sum, run) => sum + run.hitsTaken, 0);
+	const probeProblems = probe === null ? [] : attachProbe(runs, probe.rows, events);
+	const allProblems = problems.concat(probeProblems);
+	const measured = probe === null ? [] : runs.filter((run) => run.probe !== undefined && run.probe.hits > 0);
+	const readable = measured.reduce((sum, run) => sum + run.probe.readable, 0);
+	const fpsMin = measured.length === 0 ? null : Math.min(...measured.map((run) => run.probe.fpsMin).filter((value) => typeof value === 'number'));
+	const extraGate = probe === null ? [] : [
+		{ id: 'C2.2', text: `readable-share ${readable}/${measured.reduce((sum, run) => sum + run.probe.hits, 0)} hits had >= ${TELEGRAPH_FLOOR} usable telegraph frames - a proxy, the player's own "I understood" is still the numerator`, ok: measured.length > 0 && readable === measured.reduce((sum, run) => sum + run.probe.hits, 0) },
+		{ id: 'C3.3', text: fpsMin === null ? 'no probe samples with fps - diagnostic only, no gate threshold' : `fps min ${fpsMin} across ${measured.length} run(s) (diagnostic, no threshold)`, ok: true },
+	];
 	const gate = [
 		{ id: 'C1.1', text: `${valid.length} valid run(s), ${expectedRuns} expected`, ok: valid.length >= expectedRuns },
 		{ id: 'C1.2', text: `${wins} win(s) on ${valid.length} valid run(s); gate needs >= 8/10`, ok: wins >= 8 },
 		{ id: 'C3.1', text: engine === null ? 'Not Run - pass --engine-log <godot.log> to count SCRIPT ERROR' : `${engine.scriptErrors} SCRIPT ERROR across ${engine.files.length} engine log file(s)`, ok: engine !== null && engine.scriptErrors === 0 },
 		{ id: 'C3.2', text: `${runs.filter((run) => run.resetAfter).length}/${runs.length} run(s) closed by encounter_reset (the reset state itself is proven by harness run_t022_reward)`, ok: runs.length > 0 && runs.every((run) => run.resetAfter) },
-	];
+	].concat(extraGate);
 	const rows = runs.map((run) => {
 		const ticks = run.endFrame === null ? '-' : run.endFrame - run.startFrame;
 		const seconds = run.endFrame === null ? '-' : (ticks / TICKS_PER_SECOND).toFixed(2);
@@ -205,7 +341,7 @@ ${events.length} log rows, ${runs.length} run start(s), ${valid.length} valid un
 |---|-----|-------|-------|---|-----------|---------|-----------------|--------------|-------------------|------------|--------|--------|-----------------|----------------|------|--------|
 ${rows}
 
-Total hits taken across valid runs = **${hitsTaken}**. That is the denominator \`n\` of
+${probe === null ? '' : probeTable(runs)}Total hits taken across valid runs = **${hitsTaken}**. That is the denominator \`n\` of
 C2.2; the numerator \`x\` (hits whose reason the player understood) is user-reported only.
 
 ## Machine-checkable sub-gates
@@ -214,10 +350,11 @@ C2.2; the numerator \`x\` (hits whose reason the player understood) is user-repo
 |---|---|---|
 ${gate.map((item) => `| ${item.id} | ${item.text} | ${item.ok ? 'ok' : 'CHECK'} |`).join('\n')}
 
-C1.3 (whether the losses came from in-encounter decisions), C2.1 (Readability /
-Fairness per run), C2.2 \`x\`, C2.3 (telegraph stills) and C3.3 (FPS while playing)
-cannot come from a CSV - they are filled in from the playtest report and the L3
-captures. This table never marks an L4 sub-check Passed on its own.
+What never comes from a log: C1.3 (were the losses intended), C2.1 (Readability
+and Fairness as judged by the player) and Fun. With the probe attached, C2.2 has
+a measured proxy above, C2.3 is covered by the death PNGs, and C3.3 is measured -
+but a proxy is not a rating, so this table still never marks an L4 sub-check
+Passed on its own.
 
 ## Violations
 
@@ -226,13 +363,15 @@ ${problems.length === 0 ? 'none' : problems.map((line) => `- ${line}`).join('\n'
 	return {
 		summary: {
 			source, rows: events.length, runs: runs.length, valid: valid.length, wins,
-			losses: valid.length - wins, hitsTaken, violations: problems.length,
+			losses: valid.length - wins, hitsTaken, violations: allProblems.length,
 			bossTelegraphMin: Math.min(...runs.map((run) => run.minBossTelegraph).filter(Number.isFinite), 999),
+			probeRows: probe === null ? 0 : probe.rows.length,
+			readableShare: `${readable}/${measured.reduce((sum, run) => sum + run.probe.hits, 0)}`,
 			scriptErrors: engine === null ? 'n/a' : engine.scriptErrors,
 		},
 		markdown,
 		gate,
-		problems,
+		problems: allProblems,
 	};
 }
 
@@ -242,12 +381,18 @@ function sourceLabel(file) {
 	return relative.startsWith('..') ? absolute : relative;
 }
 
-function scoreFile(file, expectedRuns, engineLogs) {
+function scoreFile(file, expectedRuns, engineLogs, probeFile) {
 	const source = sourceLabel(file);
 	const { events, problems } = parseCsv(readFileSync(file, 'utf8'));
 	const runs = segment(events);
 	const engine = engineLogs.length > 0 ? engineLog(engineLogs) : null;
-	return buildReport(source, events, runs, problems.concat(validate(runs)), engine, expectedRuns);
+	let probe = null;
+	if (probeFile !== null) {
+		const parsed = parseProbe(readFileSync(probeFile, 'utf8'));
+		probe = { rows: parsed.rows, problems: parsed.problems };
+		return buildReport(source, events, runs, problems.concat(validate(runs), parsed.problems), engine, expectedRuns, probe);
+	}
+	return buildReport(source, events, runs, problems.concat(validate(runs)), engine, expectedRuns, null);
 }
 
 // --- selftest fixtures -------------------------------------------------------
@@ -311,6 +456,47 @@ function toCsv(events) {
 	return [HEADER, ...events.map((event) => `${event.frame},${event.entity},${event.event},${event.attackId},${event.targetId},${event.value}`)].join('\n') + '\n';
 }
 
+function probeRow(cells) {
+	return PROBE_HEADER.split(',').map((column) => (cells[column] === undefined ? '' : String(cells[column]))).join(',');
+}
+
+// Probe sidecar for the fixtures: one h row per damage-to-player event with the
+// real telegraph gap, plus 10 Hz samples, so the probe path is exercised by the
+// same session rather than by a file that merely parses.
+function baseProbe(events, options = {}) {
+	const fps = options.fps ?? 60;
+	const telegraphs = {};
+	const rows = [];
+	const hits = [];
+	for (let frame = 6; frame <= events[events.length - 1].frame; frame += 6) {
+		rows.push(probeRow({ frame, kind: 's', hp: 100, x: 0, z: 0, nearobs: 2, dodge: 1, swing: 0, boss_hp: -1, boss_state: -1, fps }));
+	}
+	for (const event of events) {
+		if (event.event === 'telegraph_start') telegraphs[`${event.entity}:${event.attackId}`] = event.frame;
+		if (event.event !== 'damage' || event.targetId !== 2) continue;
+		const record = event.entity === 'projectile' ? `ranged:${event.attackId}` : `${event.entity}:${event.attackId}`;
+		const start = telegraphs[record] ?? -1;
+		hits.push({
+			frame: event.frame, kind: 'h', hp: 85, x: 0, z: 0, nearobs: 1, dodge: 1, swing: 0,
+			boss_hp: -1, boss_state: -1, atk: event.attackId, src: event.entity, dist: 0.9,
+			dreact: start < 0 ? -1 : event.frame - start, moved: 1, dmg: event.value, fps,
+		});
+	}
+	if (options.firstLead !== undefined && hits.length > 0) hits[0].dreact = options.firstLead;
+	rows.push(...hits.slice(0, hits.length - (options.dropHits ?? 0)).map(probeRow));
+	const killing = events.filter((event) => event.event === 'damage' && event.targetId === 2).pop();
+	if (events.some((event) => event.event === 'encounter_lose')) {
+		rows.push(probeRow({ frame: killing.frame, kind: 'd', hp: 0, atk: killing.attackId, src: killing.entity, dmg: killing.value, boss_hp: -1, note: 'hits=1' }));
+	}
+	return rows;
+}
+
+const PROBE_HEADER = 'frame,kind,hp,x,z,nearobs,dodge,swing,boss_hp,boss_state,atk,src,dist,dreact,moved,dmg,near_role,near_dist,fps,note';
+
+function toProbeCsv(rows) {
+	return [PROBE_HEADER, ...rows].join('\n') + '\n';
+}
+
 const CASES = [
 	{ name: 'clean', broken: null, events: () => baseSession(2) },
 	{ name: 'damage-without-hit', broken: 'damage rows vs', events: () => cloneFirst(baseSession(2), (event) => event.event === 'damage' && event.entity === 'grunt') },
@@ -320,6 +506,9 @@ const CASES = [
 	{ name: 'two-phase-flips', broken: 'boss_phase logged 2 times', events: () => cloneFirst(baseSession(1), (event) => event.event === 'boss_phase') },
 	{ name: 'no-reset-between-runs', broken: 'no encounter_reset before wave 1', events: () => baseSession(2).filter((event) => !(event.event === 'encounter_reset' && event.value === 1)) },
 	{ name: 'swarm-id-collision', broken: null, events: () => cloneFirst(baseSession(2), (event) => event.event === 'telegraph_start' && event.entity === 'grunt') },
+	{ name: 'probe-clean', broken: null, expect: { readableShare: '7/7' }, events: () => baseSession(2), probe: (events) => baseProbe(events) },
+	{ name: 'probe-unreadable', broken: `usable telegraph frames (< ${TELEGRAPH_FLOOR})`, events: () => baseSession(2), probe: (events) => baseProbe(events, { firstLead: TELEGRAPH_FLOOR - 9 }) },
+	{ name: 'probe-desync', broken: 'the two files are not the same session', events: () => baseSession(2), probe: (events) => baseProbe(events, { dropHits: 1 }) },
 	{ name: 'missing-header', broken: 'line 1 is not the log header', raw: '0,encounter,wave_start,0,0,1\n10,encounter,encounter_win,0,0,0\n' },
 ];
 
@@ -334,9 +523,17 @@ function selftest(wanted) {
 	for (const item of chosen) {
 		const file = path.join(dir, `${item.name}.csv`);
 		writeFileSync(file, item.raw ?? toCsv(item.events()));
-		const { problems, summary } = scoreFile(file, 3, []);
+		let probeFile = null;
+		if (item.probe !== undefined) {
+			probeFile = path.join(dir, `${item.name}_probe.csv`);
+			writeFileSync(probeFile, toProbeCsv(item.probe(item.events())));
+		}
+		const { problems, summary } = scoreFile(file, 3, [], probeFile);
 		if (item.broken === null) {
-			const ok = problems.length === 0 && summary.valid === 3 && summary.wins === 2;
+			const expected = item.expect ?? {};
+			const ok = problems.length === 0 && summary.valid === 3 && summary.wins === 2
+				&& (expected.probeRows === undefined || summary.probeRows === expected.probeRows)
+				&& (expected.readableShare === undefined || summary.readableShare === expected.readableShare);
 			failures += ok ? 0 : 1;
 			console.log(`${ok ? 'ok  ' : 'FAIL'} ${item.name}: clean fixture measured valid=${summary.valid} wins=${summary.wins} violations=${problems.length}`);
 			for (const line of problems) console.log(`       unexpected red: ${line}`);
@@ -354,10 +551,12 @@ function selftest(wanted) {
 const argv = process.argv.slice(2);
 const engineLogs = [];
 const files = [];
+let probeFile = null;
 let expectedRuns = 10;
 for (let index = 0; index < argv.length; index += 1) {
 	const arg = argv[index];
 	if (arg === '--engine-log') index += 1, engineLogs.push(argv[index]);
+	else if (arg === '--probe') index += 1, probeFile = argv[index];
 	else if (arg === '--runs') index += 1, expectedRuns = Number(argv[index]);
 	else if (arg !== '--selftest' && arg !== '--save') files.push(arg);
 }
@@ -365,14 +564,19 @@ for (let index = 0; index < argv.length; index += 1) {
 if (argv.includes('--selftest')) process.exit(selftest(files[0]));
 
 if (files.length === 0) {
-	console.log('usage: node tools/score_l4.mjs <combat_log.csv> [--runs 10] [--engine-log <godot.log>] [--save]');
+	console.log('usage: node tools/score_l4.mjs <combat_log.csv> [--runs 10] [--probe <l4_probe.csv>] [--engine-log <godot.log>] [--save]');
+	console.log('  --probe defaults to l4_probe.csv next to the combat log (the rig writes it beside it in user://)');
 	console.log('       node tools/score_l4.mjs --selftest [case]');
 	console.log('  session log: %APPDATA%\\Godot\\app_userdata\\hd2d-adventure\\combat_log.csv');
 	console.log('  copy it out before reopening Godot - every launch truncates it');
 	process.exit(2);
 }
 
-const result = scoreFile(files[0], expectedRuns, engineLogs);
+if (probeFile === null) {
+	const sibling = path.join(path.dirname(path.resolve(files[0])), 'l4_probe.csv');
+	if (existsSync(sibling)) probeFile = sibling;
+}
+const result = scoreFile(files[0], expectedRuns, engineLogs, probeFile);
 console.log(result.markdown);
 console.log(`L4 ${Object.entries(result.summary).map(([key, value]) => `${key}=${value}`).join(' ')}`);
 if (result.problems.length > 0) {
