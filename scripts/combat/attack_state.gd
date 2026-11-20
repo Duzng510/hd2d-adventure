@@ -14,6 +14,7 @@ var max_combo_hits: int
 var phase: Phase = Phase.NONE
 var action_frame: int = 0
 var combo_index: int = 0
+var fatigue_frames: int = 0
 
 
 func _init(p_startup: int, p_active: int, p_recovery: int, p_combo_window: int, p_max_combo: int) -> void:
@@ -24,8 +25,9 @@ func _init(p_startup: int, p_active: int, p_recovery: int, p_combo_window: int, 
 	max_combo_hits = maxi(p_max_combo, 1)
 
 
-func start(p_combo_index: int) -> void:
+func start(p_combo_index: int, p_fatigue_frames: int = 0) -> void:
 	combo_index = p_combo_index
+	fatigue_frames = maxi(p_fatigue_frames, 0)
 	action_frame = 1
 	_refresh_phase()
 
@@ -41,6 +43,7 @@ func cancel() -> void:
 	phase = Phase.NONE
 	action_frame = 0
 	combo_index = 0
+	fatigue_frames = 0
 
 
 func is_attacking() -> bool:
@@ -69,9 +72,10 @@ func _refresh_phase() -> void:
 		phase = Phase.STARTUP
 	elif action_frame <= startup_frames + active_frames:
 		phase = Phase.ACTIVE
-	elif action_frame <= startup_frames + active_frames + recovery_frames:
+	elif action_frame <= startup_frames + active_frames + recovery_frames + fatigue_frames:
 		phase = Phase.RECOVERY
 	else:
 		phase = Phase.NONE
 		action_frame = 0
 		combo_index = 0
+		fatigue_frames = 0

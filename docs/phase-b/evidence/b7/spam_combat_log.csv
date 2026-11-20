@@ -28,7 +28,7 @@ frame,entity,event,attack_id,target_id,value
 68,grunt,damage,1,2,15
 74,grunt,active_end,1,0,0
 81,player,input_light,0,0,0
-82,player,action_start,5,0,0
+82,player,action_start,5,0,4
 86,player,active_start,5,0,0
 87,grunt,death,1,0,0
 87,player,hit,5,1,0
@@ -63,7 +63,7 @@ frame,entity,event,attack_id,target_id,value
 156,grunt,damage,1,2,15
 162,grunt,active_end,1,0,0
 169,player,input_light,0,0,0
-170,player,action_start,10,0,0
+170,player,action_start,10,0,4
 174,player,active_start,10,0,0
 175,grunt,death,1,0,0
 175,player,hit,10,1,0
@@ -98,7 +98,7 @@ frame,entity,event,attack_id,target_id,value
 244,grunt,damage,1,2,15
 250,grunt,active_end,1,0,0
 257,player,input_light,0,0,0
-258,player,action_start,15,0,0
+258,player,action_start,15,0,4
 262,player,active_start,15,0,0
 263,grunt,death,1,0,0
 263,player,hit,15,1,0
@@ -133,7 +133,7 @@ frame,entity,event,attack_id,target_id,value
 332,grunt,damage,1,2,15
 338,grunt,active_end,1,0,0
 345,player,input_light,0,0,0
-346,player,action_start,20,0,0
+346,player,action_start,20,0,4
 350,player,active_start,20,0,0
 351,grunt,death,1,0,0
 351,player,hit,20,1,0
@@ -168,7 +168,7 @@ frame,entity,event,attack_id,target_id,value
 420,grunt,damage,1,2,15
 426,grunt,active_end,1,0,0
 433,player,input_light,0,0,0
-434,player,action_start,25,0,0
+434,player,action_start,25,0,4
 438,player,active_start,25,0,0
 439,grunt,death,1,0,0
 439,player,hit,25,1,0
@@ -203,7 +203,7 @@ frame,entity,event,attack_id,target_id,value
 508,grunt,damage,1,2,15
 514,grunt,active_end,1,0,0
 521,player,input_light,0,0,0
-522,player,action_start,30,0,0
+522,player,action_start,30,0,4
 526,player,active_start,30,0,0
 527,grunt,death,1,0,0
 527,player,hit,30,1,0
@@ -238,7 +238,7 @@ frame,entity,event,attack_id,target_id,value
 596,grunt,damage,1,2,15
 602,grunt,active_end,1,0,0
 609,player,input_light,0,0,0
-610,player,action_start,35,0,0
+610,player,action_start,35,0,4
 614,player,active_start,35,0,0
 615,grunt,death,1,0,0
 615,player,hit,35,1,0
@@ -273,7 +273,7 @@ frame,entity,event,attack_id,target_id,value
 684,grunt,damage,1,2,15
 690,grunt,active_end,1,0,0
 697,player,input_light,0,0,0
-698,player,action_start,40,0,0
+698,player,action_start,40,0,4
 702,player,active_start,40,0,0
 703,grunt,death,1,0,0
 703,player,hit,40,1,0
@@ -308,7 +308,7 @@ frame,entity,event,attack_id,target_id,value
 772,grunt,damage,1,2,15
 778,grunt,active_end,1,0,0
 785,player,input_light,0,0,0
-786,player,action_start,45,0,0
+786,player,action_start,45,0,4
 790,player,active_start,45,0,0
 791,grunt,death,1,0,0
 791,player,hit,45,1,0
@@ -343,7 +343,7 @@ frame,entity,event,attack_id,target_id,value
 860,grunt,damage,1,2,15
 866,grunt,active_end,1,0,0
 873,player,input_light,0,0,0
-874,player,action_start,50,0,0
+874,player,action_start,50,0,4
 878,player,active_start,50,0,0
 879,grunt,death,1,0,0
 879,player,hit,50,1,0

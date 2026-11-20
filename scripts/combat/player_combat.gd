@@ -30,6 +30,7 @@ var _sprite: Sprite3D
 var _attack: AttackState
 var _buffer: InputBuffer
 var _dodge: DodgeState
+var _tempo: TempoFatigue
 var _registry := HitRegistry.new()
 
 var _combat_frame: int = 0
@@ -60,6 +61,12 @@ func _ready() -> void:
 	)
 	_buffer = InputBuffer.new(tuning.input_buffer_frames)
 	_dodge = DodgeState.new(tuning.dodge_total_frames, tuning.dodge_iframe_frames)
+	_tempo = TempoFatigue.new(
+		tuning.fatigue_free_swings,
+		tuning.fatigue_step_frames,
+		tuning.fatigue_max_frames,
+		tuning.fatigue_decay_frames
+	)
 	_hitbox.monitoring = false
 	if _swing != null:
 		_swing.visible = false
@@ -132,6 +139,8 @@ func _capture_frozen_input() -> void:
 
 
 func _try_start_from_locomotion() -> void:
+	# Standing and walking are how the tempo cost is paid back (T-027).
+	_tempo.tick_idle()
 	if _buffer.has_pending() and _buffer.consume(_combat_frame):
 		_start_attack(1)
 	else:
@@ -139,15 +148,17 @@ func _try_start_from_locomotion() -> void:
 
 
 func _start_attack(combo_index: int) -> void:
+	var fatigue := _tempo.frames()
+	_tempo.swing()
 	_swing_id += 1
-	_attack.start(combo_index)
+	_attack.start(combo_index, fatigue)
 	_attack_dir = _aim_direction()
 	_player.facing = 1 if _attack_dir.x >= 0.0 else -1
 	_hitbox.rotation.y = atan2(-_attack_dir.z, _attack_dir.x)
 	_was_active = false
 	_set_active_visuals(false)
 	_set_locked(true, Vector3.ZERO)
-	_director.log_event(&"player", &"action_start", _swing_id)
+	_director.log_event(&"player", &"action_start", _swing_id, 0, fatigue)
 
 
 func _tick_attack() -> void:
@@ -211,6 +222,8 @@ func _can_dodge() -> bool:
 
 
 func _start_dodge() -> void:
+	# A dodge is a real commitment, so it wipes the tempo cost (T-027).
+	_tempo.clear()
 	if _attack.is_attacking():
 		_attack.cancel()
 		_was_active = false
@@ -255,6 +268,7 @@ func reset() -> void:
 	health.reset()
 	_attack.cancel()
 	_dodge.cancel()
+	_tempo.clear()
 	_buffer.clear()
 	_registry.clear()
 	_hit_flash_frames = 0
@@ -274,6 +288,11 @@ func is_invulnerable() -> bool:
 ## at this instant, and were they locked in a swing.
 func dodge_available() -> bool:
 	return _can_dodge()
+
+
+## Extra recovery frames the next swing would pay (T-027). Read-only.
+func fatigue_frames() -> int:
+	return _tempo.frames()
 
 
 func is_attacking() -> bool:
