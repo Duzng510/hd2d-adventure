@@ -1,5 +1,5 @@
 # PROJECT STATE
-Cập nhật: 2026-11-20 (Project Day 2) | Commit: 1372402 (D-011) | Branch: `phase-b/t012-encounter-loop` (T-012)
+Cập nhật: 2026-11-20 (Project Day 2) | Commit: fd3a031 (T-012) | Branch: `phase-b/t013-playtest-brief` (T-013)
 
 ## Phase hiện tại
 Phase B — Combat Prototype (bắt đầu 2026-11-20). Phase A thoát theo **D-009 waiver**: gates 1–5 đạt (D-007/D-008 Accepted; lưới pixel khóa, anchor_dev = sprite_dev = 0, residual 0 px); L4 playtest Phase A **Not Run** — cảm nhận gom vào L4 Phase B cùng build. **T-008 DONE**: gate definitions Phase B (B1–B7, D1–D3) user xác nhận 2026-11-20; COMBAT_SPEC APPROVED; `combat_tuning.tres` + physics layers 3–6 + InputMap combat sẵn sàng; D-010 mouse snapshot. **T-009 DONE**: kernel thuần logic (AttackState/InputBuffer/DodgeState/Health/HitRegistry) + test 92 checks; negative control fail đúng 3 check duplicate (exit 1). **T-010 DONE**: player combat (hitbox/hurtbox Area3D, mouse-snapshot hitbox, swing arc, hitstop, combat log CSV, F1 overlay) — log in-scene 1 hit/1 damage cho 1 swing, hit trong active window, hitstop +3 tick; 5 ảnh evidence đã xem. **T-011 DONE**: Grunt AI thuần logic (idle→chase→telegraph→active→recovery, alert event, telegraph lock-in) + node (chase, telegraph visual, damage player, death); test 16 checks; capture 6 ảnh: telegraph 20 frame đúng tuning, 1 hit/attack, player→Grunt 1 hit/1 damage, player death log. **T-012 DONE**: encounter loop (thắng/thua/reset R sau 120 tick, 10 run liên tiếp headless) + HUD HP trạng thái; 4 ảnh HUD đã xem; capture có `encounter_win` (3 đòn, frame 90) → reset 210 → `encounter_lose` 542.
@@ -69,10 +69,10 @@ MVS-AC1…8 (GDD mục 0, PROPOSED): chưa kiểm chứng — chưa có build ch
   - L1 2 script + L3 test 16 checks + L2 playground exit 0; commit f8288c4 + 943a691.
 
 ## Đang làm (≤2)
-- (trống — T-012 DONE, chờ user y sang T-013)
+- T-013: `docs/phase-b/PLAYTEST_BRIEF.md` đã xong (build fd3a031, phím, 10-run protocol, mẫu báo cáo, đường dẫn CSV) — **chờ user chạy L4 10 encounter** rồi chuyển báo cáo thành task + tuning 1 tham số/lần.
 
 ## Next (3–5)
-- T-013 Playtest Brief + L4 Phase B (10 encounter, rubric MP 9) + tuning 1 tham số/lần | Dep: T-012, user
+- Chấm gate Phase B từ báo cáo L4 + evidence L3 (B1/B4.3/B5/B6/B7 + B2/B3/B4.1–2/D1–2) sau playtest | Dep: T-013, user
 - Duyệt MVS-AC1…8 + đặt ngưỡng MVS-AC2 (không chặn Phase B) | Dep: user
 
 ## Later (backlog theo phase)
