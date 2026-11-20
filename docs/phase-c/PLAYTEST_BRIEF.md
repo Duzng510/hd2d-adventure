@@ -4,29 +4,28 @@
 > Build: nhánh `phase-c/t024-l4-session`, commit `3ada4db` (scorer + launcher) trên nền `3fba5fe` (sửa boss lặp đòn chuyển phase). Đây là build **khóa cho session** — không đổi tuning, không pull code giữa chừng (C1.3a).
 > Môi trường: Windows (i5-13420H / Intel UHD / 24 GB), 1280×720, Forward+ Vulkan. Bàn phím + chuột.
 
-## 0. Đường đã chọn (2026-11-21): **3 run định tính + waiver C1–C3**
+## 0. Chơi với capture rig (T-025): bạn chỉ chơi, tôi lấy số
 
-Bạn chỉ làm 2 việc. Không copy log, không chạy lệnh, không điền bảng.
+1. Double-click **`run_arena.bat`** → chơi bao nhiêu run tùy bạn (vào arena → đánh tới win hoặc chết → ấn **R** để sang run kế).
+2. Nói "xong" **trước khi mở lại game lần nữa**. Tôi tự copy ba thứ từ AppData — `combat_log.csv`, `l4_probe.csv`, `l4_death_*.png` — rồi chạy `node tools/score_l4.mjs --probe`.
 
-1. Double-click **`run_arena.bat`** (build `3ada4db`) → chơi **3 run hợp lệ** (vào arena → đánh tới win hoặc chết → ấn **R** để sang run kế).
-2. Chat lại 5 dòng theo mẫu dưới. Nói "xong" — tôi tự copy `combat_log.csv` từ AppData, chạy `node tools/score_l4.mjs --runs 3`, soạn **D-014** theo MP 8.6 và đóng T-024 kèm waiver.
+Không cần nhớ số đòn đã ăn, không cần đọc fps trên HUD, không cần ghi wave nào chết ở đâu: rig ghi hộ từng thứ một, kể cả ảnh thật của frame bạn chết. Phần còn lại là **phán quyết**, chỉ có bạn trả lời được — trả lời ngắn khi nào cũng được:
 
 ```
-Run 1: W hay L (dừng ở wave __) | ăn __ đòn, hiểu lý do __ đòn | Read __/5  Fair __/5
-Run 2: ...
-Run 3: ...
-a) Telegraph nào bạn KHÔNG đọc được trước / bị che? (không có thì ghi "không")
-b) Có kẹt, wave không spawn, cổng không mở, hay lỗi gì không?
+Read __/5  Fair __/5   (từng run; nếu chấm gộp thì tôi ghi là gộp, không giả per-run)
+a) Có đòn nào bạn CẢM thấy không tài nào đọc trước không? (máy đã kiểm tra cửa sổ telegraph; câu này là về cảm giác)
+b) Những lần thua là do quyết định trong encounter, hay do game khó hiểu?
+c) Fun __/5
 ```
 
-Dự kiến ghi trong D-014: **C1 Not Run** (3/10 run), **C2 Incomplete** (mean trên 3 mẫu, `x/y` 3 mẫu), **C3 Partial** (0 `SCRIPT ERROR` + chuỗi reset do máy đo, FPS bạn báo), trong khi E1–E5 và D1–D3 vẫn Passed. Rủi ro được chấp nhận: độ khó và readability của encounter nhiều enemy **chưa** có bằng chứng con người → mọi tuning từ Phase D trở đi không có baseline C1.
+Trạng thái gate dự kiến (MP 8.6, sẽ ghi **D-016** sau khi có phán quyết của bạn): C1 vẫn cần 10 run nên ở mức **Not Run/Failed-baseline** nếu bạn chơi ít hơn; C2.1 cần số của bạn; C2.2 có proxy `readable-share` từ rig nhưng proxy không phải tử số; C3.1/C3.2/C3.3 máy đo được toàn bộ. E1–E5 và D1–D3 đã Passed.
 
-Muốn C1/C2/C3 thành **Passed** thì vẫn phải đủ 10 run — protocol chuẩn ở §1–§8 dưới đây không đổi, chỉ cần bạn chơi thêm 7 run.
+Muốn C1/C2/C3 thành **Passed**: chơi đủ 10 run trong MỘT session, protocol ở §1–§8 dưới đây không đổi.
 
 ## 1. Cách chạy
 
-**Double-click `run_arena.bat`** ở root repo. File này mở thẳng `scenes/phase_c/grove_arena.tscn`.
-`run.bat` và `Ctrl+Shift+B` vẫn mở playground Phase A — **dùng `run_arena.bat`**, vì mỗi lần mở game là `user://combat_log.csv` bị xoá để ghi lại (log truncate theo launch).
+**Double-click `run_arena.bat`** ở root repo. File này mở `scenes/phase_c/play_arena.tscn` = arena thật + capture rig T-025 (probe CSV + PNG lúc chết); bản arena trần là `scenes/phase_c/grove_arena.tscn`.
+`run.bat` và `Ctrl+Shift+B` vẫn mở playground Phase A — **dùng `run_arena.bat`**, vì mỗi lần mở game là `user://combat_log.csv` và `user://l4_probe.csv` bị xoá để ghi lại (log truncate theo launch).
 
 Nếu game báo hàng loạt `Parse Error: Identifier "..." not declared` sau khi đổi branch: chạy một lần
 `<GODOT> --headless --path . --import` rồi mở lại — không phải lỗi gameplay.
@@ -61,7 +60,7 @@ Gợi ý phân bổ: cả 10 run chơi tự nhiên như bạn muốn thắng (kh
 ## 3. Sau MỖI run, trả lời ngay (kéo dài ~2–3 s)
 
 - **Readability 1–5** và **Fairness 1–5** cho run đó (C2.1 — chấm từng run, không chấm gộp).
-- **x/y**: `y` = số lần bị trúng trong run (đếm theo cảm nhận; HP cuối run đối chiếu được: `y ≈ HP mất / dmg từng vai trò`), `x` = trong đó bạn **hiểu rõ lý do** đứng trúng (đọc được telegraph, không bị che, không phải đòn từ ngoài tầm nhìn).
+- **x/y**: `y` **do rig đếm** (probe `h` row, đã đối chiếu 1-1 với combat log) — bạn không cần nhớ. `x` = trong số đó bạn **hiểu rõ lý do** đứng trúng; rig cho thêm proxy `readable-share` (số đòn có cửa sổ telegraph đủ dài) nhưng proxy không phải `x`.
 - 4 câu có/không: (a) phân biệt được 4 vai trò chỉ bằng hình? (b) đọc được projectile đang bay? (c) nhận ra boss đã vào phase 2? (d) có lúc nào telegraph bị trụ/hiệu ứng/body che không?
 
 ## 4. Cuối session (C1.3, C3)
@@ -69,10 +68,12 @@ Gợi ý phân bổ: cả 10 run chơi tự nhiên như bạn muốn thắng (kh
 - C1.3: các lần **thua** (nếu có) đến từ quyết định trong encounter (tham đánh, đứng sai chỗ, bị kite) hay do lỗi kỹ thuật/khó hiểu? Nếu do lỗi → C1 Incomplete, sửa rồi chơi lại.
 - C3.1: có **SCRIPT ERROR**, wave không spawn, cổng không mở, boss kẹt chuyển phase, projectile tồn tại vô hạn không?
 - C3.2: 10/10 lần ấn R có đưa về đúng trạng thái chuẩn (HP full, wave 1, enemy cũ sạch, cổng đóng, boss HP/phase reset)?
-- C3.3: **fps** đọc trên HUD ở 2 thời điểm — wave 1 (5 enemy) và boss phase 2 (chỉ ghi nhận, không có ngưỡng).
+- C3.3: **fps** rig lấy từ sample mỗi 0,1 s (kèm min/median từng run) — không cần đọc HUD nữa; vẫn chỉ là diagnostic, không có ngưỡng gate.
 - Chấm gộp **Fun 1–5** + **Responsiveness 1–5** toàn session (MP 9; Responsiveness không thuộc gate Phase C nhưng cần baseline).
 
 ## 5. Mẫu báo cáo (copy và điền)
+
+> Từ T-025, các cột do máy đo (W/L, wave dừng, ticks, hit `y`, fps, PNG lúc chết) **scorer tự sinh** — bạn chỉ điền cột người: Read, Fair, a/b/c/d và `x`.
 
 ```
 Build/commit: 3ada4db (nhánh phase-c/t024-l4-session)
