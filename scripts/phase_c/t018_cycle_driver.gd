@@ -52,7 +52,7 @@ func _run() -> void:
 			var hp_ok := _combat.hp() == _combat.health.max_hp and not _combat.is_dead()
 			var pos_ok := _player.global_position.distance_to(_encounter.player_spawn) < 0.1
 			var wave_ok := _encounter.kernel.wave_index == 0
-			var enemies_ok := _encounter.alive_count() == _encounter.wave_sizes[0]
+			var enemies_ok := _encounter.alive_count() == _encounter.wave_size(0)
 			if not (hp_ok and pos_ok and wave_ok and enemies_ok):
 				reset_checks_ok = false
 		if state == WaveKernel.State.FIGHTING or state == WaveKernel.State.PAUSED:

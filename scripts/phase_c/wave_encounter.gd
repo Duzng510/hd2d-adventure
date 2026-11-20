@@ -2,14 +2,18 @@ class_name WaveEncounter
 extends Node
 
 ## Phase C arena encounter: spawns waves, drives WaveKernel, owns win/lose/reset
-## and wave logging. Enemy composition is placeholder (all Grunt) until
-## T-019/T-020/T-021 add real roles; T-022 adds the reward.
+## and wave logging. Wave composition is data-driven: wave_roles lists a role
+## per spawn and enemy_scenes maps each role to its scene. T-022 adds the reward.
 
 signal run_ended(won: bool)
 
 @export var tuning: CombatTuning
-@export var enemy_scene: PackedScene
-@export var wave_sizes: Array[int] = [5, 4, 1]
+@export var enemy_scenes: Dictionary = {}
+@export var wave_roles: Array = [
+	["grunt", "grunt", "swarm", "swarm", "swarm"],
+	["grunt", "grunt", "grunt", "grunt"],
+	["grunt"],
+]
 @export var wave_pause_frames: int = 60
 @export var reset_delay_frames: int = 120
 @export var player_path: NodePath = NodePath("../Player")
@@ -41,7 +45,10 @@ func _ready() -> void:
 	_player = get_node(player_path)
 	_combat = _player.get_node("PlayerCombat")
 	_director = get_node(director_path)
-	kernel = WaveKernel.new(wave_sizes, wave_pause_frames)
+	var sizes: Array[int] = []
+	for roles in wave_roles:
+		sizes.append((roles as Array).size())
+	kernel = WaveKernel.new(sizes, wave_pause_frames)
 
 
 func _physics_process(_delta: float) -> void:
@@ -82,6 +89,15 @@ func nearest_alive_position() -> Vector3:
 	return _player.global_position
 
 
+func wave_size(index: int) -> int:
+	return (wave_roles[index] as Array).size()
+
+
+func enemies() -> Array[Grunt]:
+	var copy: Array[Grunt] = _enemies.duplicate()
+	return copy
+
+
 func reset_run() -> void:
 	for enemy in _enemies:
 		enemy.queue_free()
@@ -106,10 +122,15 @@ func _start_run() -> void:
 
 
 func _begin_wave() -> void:
-	var size: int = kernel.wave_sizes[kernel.wave_index]
-	for i in size:
+	var roles: Array = wave_roles[kernel.wave_index]
+	for i in roles.size():
+		var role: String = roles[i]
+		var scene: PackedScene = enemy_scenes.get(role) as PackedScene
+		if scene == null:
+			push_error("WaveEncounter: missing enemy scene for role '%s'" % role)
+			continue
 		var offset: Vector3 = spawn_offsets[i % spawn_offsets.size()]
-		var enemy: Grunt = enemy_scene.instantiate()
+		var enemy: Grunt = scene.instantiate()
 		enemy.tuning = tuning
 		enemy.player_path = NodePath("../../Player")
 		enemy.director_path = NodePath("../../CombatDirector")
