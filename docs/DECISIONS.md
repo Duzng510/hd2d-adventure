@@ -12,7 +12,8 @@ Lịch sử quyết định. Quyết định bị thay thế đánh **Superseded
 | D-004 | 2026-11-20 | Technical | Renderer Forward+ làm baseline | Proposed |
 | D-005 | 2026-11-20 | Technical | Physics layers: 1=world, 2=player | Proposed |
 | D-006 | 2026-11-20 | Technical | Gameplay XZ-plane + aim ground y=0 + occlusion fade 0.25 | Accepted |
-| D-007 | 2026-11-20 | Technical | Projection baseline: perspective FOV35 + snap follow (ortho thử qua P) | Proposed |
+| D-007 | 2026-11-20 | Technical | Projection: ortho texel_scale 4 + camera snap (persp giữ qua P để so sánh) | Accepted |
+| D-008 | 2026-11-20 | Technical | Khóa pixel-grid: ortho integer scale + camera snap + sprite visual snap; giữ FIXED_Y, mật độ texel cố định | Accepted |
 
 ---
 
@@ -58,9 +59,17 @@ Lịch sử quyết định. Quyết định bị thay thế đánh **Superseded
 - **Alternatives considered:** Aim theo hit collider (bám mặt vật thể) — phức tạp hơn, chưa cần; không fade (giữ vật che opaque) — làm mất reticle/player, bị loại qua G2.2 Fail.
 - **Consequences:** Player/telegraph/reticle không bao giờ fade; group `fadeable` = Wall/Block/Roof. Single center-ray có thể sót che khuất một phần; alpha 0.25 cho cảm giác "ghost" (tradeoff đã ghi ở OPERATIONAL_DEFINITIONS §10). Cảm nhận fade cần L4 playtest.
 
-## D-007 · 2026-11-20 · Technical · Proposed
+## D-007 · 2026-11-20 · Technical · Accepted
 
-- **Decision:** Baseline projection thử: **perspective FOV 35**, camera follow **snap** (smoothing 0), offset (0,10,8), look_at player. Ortho (size 10) để so sánh trực tiếp qua phím **P** trong run file.
-- **Reason:** Perspective cho chiều sâu diorama HD-2D; snap giữ camera bám chính xác để đo aim/drift. Ortho chưa kiểm chứng trên máy dev.
-- **Alternatives considered:** Orthographic — khóa integer pixel (texel=1px) dễ hơn nhưng chưa đo; follow smoothing >0 — mượt hơn nhưng thêm latency, để dành tinh chỉnh feel ở L4.
-- **Consequences:** Giữ **Proposed** tới khi user so sánh persp/ortho trực tiếp (P) và duyệt sau L4. Screen px/texel hiện ≈1.5 (không integer) → luật pixel-grid texel=1px còn mở, gắn với lựa chọn projection (ART_SPEC §3). Không tự nâng lên Accepted.
+- **Decision:** Projection chính thức **orthographic**, `texel_scale = 4` → `size = viewport_height × pixel_size / 4` (9 tại 720p, tự theo resolution); camera follow snap (smoothing 0) + `snap_to_pixel = true`, offset (0,10,8). Perspective FOV 35 giữ làm chế độ so sánh qua phím **P**.
+- **Reason:** User chọn bằng văn bản ngày 2026-11-20: **"Ortho + giữ FIXED_Y"** sau evidence T-006. Đo thật: persp không thể integer px/texel toàn cục (4.458 tại player, 4.062 tại điểm xa hơn) và camera snap không giảm shimmer persp (residual 18013→18681 px); ortho khóa được world crawl (T-006 −95%, T-007 = 0).
+- **Alternatives considered:** Perspective + chỉnh pixel_size — loại vì px/texel đổi theo độ sâu; SubViewport low-res + integer upscale — loại vì mất chi tiết diorama 3D của HD-2D; ortho + full billboard cho texel vuông — user chọn giữ FIXED_Y thay thế.
+- **Consequences:** Mật độ texel cố định **4.000 × 2.499 px** (aspect 0.6247) là chủ đích, không phải lỗi (D-008). Mất chiều sâu phối cảnh của diorama; cảm nhận cuối cùng đánh giá ở L4. Follow smoothing >0 vẫn để dành tinh chỉnh feel sau playtest.
+- **Evidence:** T-006/T-007, OPERATIONAL_DEFINITIONS §12–13, `evidence/pixel/`, `evidence/pixel_t007/`.
+
+## D-008 · 2026-11-20 · Technical · Accepted
+
+- **Decision:** Gói khóa pixel-grid gồm 4 phần, nay đủ: (1) ortho integer scale (`texel_scale`); (2) camera snap theo pixel màn hình (`snap_to_pixel`); (3) visual snap của sprite tách khỏi logic position (`visual_snap`, lượng tử hóa vị trí hiển thị về integer px); (4) **giữ billboard FIXED_Y** và sửa luật pixel-grid từ "texel vuông" thành **"mật độ texel cố định, nhất quán mọi frame"** (4.000 × 2.499 px tại scale 4).
+- **Reason:** User chốt "Ortho + giữ FIXED_Y" ngày 2026-11-20. Đo T-006 cho thấy thiếu phần nào luật vỡ phần đó; T-007 chứng minh đủ 3 phần kỹ thuật thì `anchor_dev` = `sprite_dev` = 0.0000 suốt 24 frame và residual 0 px. Texel vuông bị loại vì phải đổi cách đặt sprite (full billboard nghiêng theo camera, ảnh hưởng bóng/đổ bóng) — user ưu tiên sprite đứng thẳng của diorama.
+- **Alternatives considered:** Full billboard / mặt phẳng nghiêng khớp pitch cho texel vuông — user không chọn; chấp nhận crawl — loại vì phá luật pixel-grid; SubViewport low-res — xem D-007.
+- **Consequences:** (1)(2)(3) implement ở T-007 và là mặc định của scene; visual snap dịch sprite ≤0.5 px màn hình (~0.004 u), foot pivot vẫn chạm đất (ảnh T-007 đã xem). Hàng dọc texel vẫn lẻ px (2.499) nhưng **hằng số** nên không crawl. Asset hàng loạt hết chặn về mặt pixel; vẫn chờ chốt bộ hướng sprite + palette (ART_SPEC §6).

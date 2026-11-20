@@ -61,3 +61,9 @@ Mask: player mask = 1 (chạm world); world mask = 0. Hitbox/hurtbox layers sẽ
 - Placeholder trước; một asset đại diện tích hợp thành công trước khi mở rộng.
 - Art Spec tạm (scale, frame size, foot pivot, hướng nhìn) phải được user xác nhận trước khi sinh asset AI hàng loạt.
 - Mọi asset ghi `assets/ASSET_LOG.md` (nguồn/công cụ, ngày, giấy phép); không dùng giấy phép không rõ.
+
+## Git
+
+- Branch: `<phase>/<task-id>-<slug>` chữ thường, ví dụ `phase-a/t006-pixel-grid`; việc không thuộc phase: `chore/<slug>`. Mỗi task một branch, không commit thẳng `main`.
+- Commit message tiếng Anh, dạng `T-xxx <imperative summary ≤72 ký tự>`; body gạch đầu dòng nêu lý do + validation (L1/L2/L3, exit code). Không dùng prefix feat/fix.
+- Stage theo path cụ thể, không `git add -A`; commit `.uid` cùng file mới; không commit `.godot/`. Không push khi chưa được yêu cầu.

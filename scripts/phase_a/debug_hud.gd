@@ -42,9 +42,15 @@ func _physics_process(_delta: float) -> void:
 	var aim_txt := "none"
 	if _aim.has_hit:
 		aim_txt = "(%.2f, %.2f) off %.1fpx" % [_aim.aim_point.x, _aim.aim_point.z, _aim.screen_offset_px]
-	_label.text = "frame %d | pos (%.2f, %.2f, %.2f) | vel (%.2f, %.2f) | fps %d | %s | log %s | aim %s\nP: projection | L: frame log" % [
+	var ppu := _camera.px_per_unit()
+	var cb := _camera.global_transform.basis
+	var horiz := PixelGrid.texel_screen_delta(cb.x, cb.x, cb.y, ppu, _camera.pixel_size)
+	var vert := PixelGrid.texel_screen_delta(Vector3.UP, cb.x, cb.y, ppu, _camera.pixel_size)
+	_label.text = "frame %d | pos (%.2f, %.2f, %.2f) | vel (%.2f, %.2f) | fps %d | %s | log %s | aim %s\ntexel %.2fx%.2fpx aspect %.3f snap %s | P: projection | L: frame log" % [
 		_frame, p.x, p.y, p.z, v.x, v.z, Engine.get_frames_per_second(), projection,
 		"on" if _log_enabled else "off", aim_txt,
+		horiz.length(), vert.length(), PixelGrid.texel_aspect(horiz, vert),
+		"on" if _camera.snap_to_pixel else "off",
 	]
 	_cursor.queue_redraw()
 	if _log_enabled and _log_file != null:
