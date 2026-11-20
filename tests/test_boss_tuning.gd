@@ -32,8 +32,10 @@ func _initialize() -> void:
 	_check(absf(tuning.boss_smash_radius - 2.2) < 0.0001, "smash radius 2.2")
 	_check(tuning.boss_lunge_telegraph_frames == 24, "lunge telegraph 24")
 	_check(tuning.boss_lunge_active_frames == 8, "lunge active 8")
-	_check(tuning.boss_lunge_recovery_frames == 24, "lunge recovery 24")
-	_check(tuning.boss_lunge_phase2_recovery_frames == 16, "lunge phase 2 recovery 16")
+	# L4 2026-11-21: lunge cadence was 64% of boss damage with no punish window,
+	# so recovery grew from the OPERATIONAL_DEFINITIONS s9 hypothesis (24/16).
+	_check(tuning.boss_lunge_recovery_frames == 36, "lunge recovery 36 (L4 tune)")
+	_check(tuning.boss_lunge_phase2_recovery_frames == 24, "lunge phase 2 recovery 24 (L4 tune)")
 	_check(tuning.boss_lunge_damage == 12, "lunge damage 12")
 	_check(absf(tuning.boss_lunge_range - 5.0) < 0.0001, "lunge range 5.0")
 	_check(tuning.boss_sweep_telegraph_frames == 20, "sweep telegraph 20")
