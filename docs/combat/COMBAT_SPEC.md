@@ -27,6 +27,7 @@ Action khai báo một lần trong `project.godot`; gameplay chỉ đọc action
 - Coverage: startup/active/recovery, combo window + combo hits, buffer, damage, reach; dodge i-frame/total/speed; hitstop; HP player/grunt; detect/attack range, approach speed, telegraph/active/recovery, damage của Grunt.
 - Swarm (Phase C): swarm_max_hp/telegraph/active/recovery/damage/approach/detect/attack_range — HYPOTHESIS gate doc §9; telegraph floor ≥18.
 - Ranged (Phase C): ranged_max_hp/min_range/max_range/approach/telegraph/active/recovery/damage/projectile speed/lifetime — HYPOTHESIS gate doc §9; telegraph 24 (floor ≥18); projectile lifetime ≤120 tick (2 s).
+- Boss (Phase C): boss_max_hp/detect/chase/phase threshold + switch, và theo từng đòn (smash/lunge/sweep) bộ telegraph/active/recovery (phase 1 + phase 2)/damage/radius-range — HYPOTHESIS gate doc §9; **mọi** telegraph ≥18; phase 2 nhanh hơn chỉ qua recovery, không hạ telegraph.
 
 ## 4. Frame model (khóa off-by-one)
 
@@ -99,6 +100,7 @@ Quy tắc:
 - Event encounter Phase C (T-018): `wave_start` với `value` = chỉ số wave 1-based; log tại tick spawn wave, sau `encounter_reset`/run start. Win/lose/reset giữ semantics T-012. Event của vai trò enemy mới (`projectile_*`, `boss_phase`, `reward_granted`) thêm ở T-020/T-021/T-022.
 - Entity Phase C: enemy theo vai trò log entity = &"grunt" hoặc &"swarm" (cùng schema event); wave_start giữ semantics T-018.
 - Projectile (T-020): `projectile_fire` entity `ranged` tại tick `active_start` (cùng `attack_id` của attack instance Ranged); `projectile_hit` entity `projectile`, `target_id` = 2 (player); `damage` cùng `attack_id`/`target_id`, `value` = damage áp dụng; `projectile_despawn` entity `projectile`, `value`: 1 = trúng player, 2 = chạm world/tường, 3 = hết lifetime (≤120 tick). Mỗi projectile damage tối đa 1 lần và despawn ngay sau hit.
+- Boss (T-021): mỗi đòn (smash/lunge/sweep) và phase switch là **một attack instance riêng** — `attack_id` tăng tại `telegraph_start`, schema `telegraph_start/telegraph_end/active_start/active_end` như Grunt, entity `boss`. `boss_phase` có `value` = số phase (2), log **đúng một lần** tại tick hoàn tất switch (kết thúc recovery của đòn SWITCH); SWITCH không gây damage nên không có `hit`/`damage`. Damage của boss dùng `target_id` = 2 (player).
 - `telegraph_start` tại frame telegraph đầu tiên; `telegraph_end` tại boundary tick kết thúc telegraph (cùng tick với `active_start`, log trước `active_start`). B4.1 đo `active_start.frame − telegraph_start.frame`.
 - Swing miss vẫn log `active_end`; không bắt buộc `hit`/`damage`. Enemy attack có `attack_id` riêng cho **mỗi** telegraph/attack instance.
 - Diagnostic input→action_start = số tick engine-side (chỉ diagnostic; không đại diện input-to-display — GDD 6.4).
