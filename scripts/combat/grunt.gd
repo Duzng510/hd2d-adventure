@@ -91,6 +91,28 @@ func current_attack_id() -> int:
 	return _attack_id
 
 
+## Evidence-harness hook: turns one-hit-per-swing enforcement off so a
+## negative control can prove the registry is what blocks repeat hits.
+func debug_set_registry_enforce(value: bool) -> void:
+	_registry.enforce = value
+
+
+func duplicate_hit_count() -> int:
+	return _registry.duplicate_applied
+
+
+## Hits the registry refused inside the same swing — proves enforcement is
+## really doing work (E1.4 positive evidence).
+func blocked_repeat_count() -> int:
+	return _registry.blocked_repeats
+
+
+## Entity name this enemy writes to the combat log — the other half of the key
+## evidence harnesses use to read one swing back out of the log.
+func log_entity() -> StringName:
+	return _log_entity()
+
+
 func hp() -> int:
 	return health.hp
 

@@ -156,5 +156,6 @@ func _count(event_name: StringName) -> int:
 
 func _check(condition: bool, label: String) -> void:
 	_checks += 1
+	print("CHECK %s %s" % ["PASS" if condition else "FAIL", label])
 	if not condition:
 		_failures.append(label)

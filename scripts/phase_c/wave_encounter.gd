@@ -100,6 +100,16 @@ func enemies() -> Array[Grunt]:
 	return copy
 
 
+## Evidence-harness hook: drops the tracked enemies and in-flight projectiles
+## without starting a new run, so a stage can measure one spawned role alone.
+func debug_clear_enemies() -> void:
+	for enemy in _enemies:
+		enemy.queue_free()
+	_enemies.clear()
+	for projectile in get_tree().get_nodes_in_group(&"enemy_projectile"):
+		projectile.queue_free()
+
+
 func reset_run() -> void:
 	for enemy in _enemies:
 		enemy.queue_free()
@@ -129,24 +139,30 @@ func _start_run() -> void:
 func _begin_wave() -> void:
 	var roles: Array = wave_roles[kernel.wave_index]
 	for i in roles.size():
-		var role: String = roles[i]
-		var scene: PackedScene = enemy_scenes.get(role) as PackedScene
-		if scene == null:
-			push_error("WaveEncounter: missing enemy scene for role '%s'" % role)
-			continue
-		var offset: Vector3 = spawn_offsets[i % spawn_offsets.size()]
-		var enemy: Grunt = scene.instantiate()
-		enemy.tuning = tuning
-		enemy.player_path = NodePath("../../Player")
-		enemy.director_path = NodePath("../../CombatDirector")
-		enemy.target_id = _next_target_id
-		_next_target_id += 1
-		enemy.spawn_position = offset
-		enemy.position = offset
-		enemy.name = "Enemy%d_%d" % [kernel.wave_index + 1, i + 1]
-		add_child(enemy)
-		_enemies.append(enemy)
+		debug_spawn(roles[i], spawn_offsets[i % spawn_offsets.size()])
 	_director.log_event(&"encounter", &"wave_start", 0, 0, kernel.wave_index + 1)
+
+
+## Spawns one enemy of `role` at `at` and registers it with the encounter.
+## The wave loop uses it; the T-023 evidence stage uses it to spawn a single
+## role outside a wave. Returns null when the role has no scene mapped.
+func debug_spawn(role: String, at: Vector3) -> Grunt:
+	var scene: PackedScene = enemy_scenes.get(role) as PackedScene
+	if scene == null:
+		push_error("WaveEncounter: missing enemy scene for role '%s'" % role)
+		return null
+	var enemy: Grunt = scene.instantiate()
+	enemy.tuning = tuning
+	enemy.player_path = NodePath("../../Player")
+	enemy.director_path = NodePath("../../CombatDirector")
+	enemy.target_id = _next_target_id
+	_next_target_id += 1
+	enemy.spawn_position = at
+	enemy.position = at
+	enemy.name = "Enemy_%s_%d" % [role, enemy.target_id]
+	add_child(enemy)
+	_enemies.append(enemy)
+	return enemy
 
 
 func _end_run(won: bool) -> void:

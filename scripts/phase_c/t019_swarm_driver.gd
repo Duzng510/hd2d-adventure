@@ -93,5 +93,12 @@ func _run() -> void:
 		and reset_checks_ok
 		and ticks < MAX_TICKS
 	)
+	# Evidence ids consumed by tools/run_evidence.mjs.
+	print("CHECK %s E1.1 wave 1 spawn %d Swarm + %d Grunt dong thoi (can 3+2)" % [
+		"PASS" if swarms_seen == 3 and grunts_seen == 2 else "FAIL", swarms_seen, grunts_seen,
+	])
+	print("CHECK %s flow.reset_state hp/spawn/wave/enemies chuan sau moi reset" % [
+		"PASS" if reset_checks_ok else "FAIL",
+	])
 	print("PASS t019_swarm" if ok else "FAIL t019_swarm")
 	get_tree().quit(0 if ok else 1)
