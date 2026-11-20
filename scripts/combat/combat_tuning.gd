@@ -12,6 +12,12 @@ extends Resource
 @export var light_damage: int = 10
 @export var light_reach: float = 1.4
 
+@export_group("Attack tempo (T-027, player only)")
+@export var fatigue_free_swings: int = 3
+@export var fatigue_step_frames: int = 4
+@export var fatigue_max_frames: int = 12
+@export var fatigue_decay_frames: int = 6
+
 @export_group("Dodge")
 @export var dodge_iframe_frames: int = 10
 @export var dodge_total_frames: int = 22

@@ -15,6 +15,7 @@ func _initialize() -> void:
 		quit(1)
 		return
 	_test_attack_timeline(tuning)
+	_test_attack_fatigue(tuning)
 	_test_combo_window()
 	_test_input_buffer(tuning)
 	_test_dodge()
@@ -50,6 +51,48 @@ func _test_attack_timeline(tuning: CombatTuning) -> void:
 	_check(atk.phase == AttackState.Phase.NONE, "attack ends after recovery")
 	_check(atk.action_frame == 0, "action_frame resets at end")
 	_check(atk.combo_index == 0, "combo resets at end")
+
+
+func _test_attack_fatigue(tuning: CombatTuning) -> void:
+	# T-027 law: fatigue buys time only in recovery. Startup, the active window and
+	# the combo window keep their authored length, so a player who chains on beat is
+	# never punished - the cost lands on the swing after the combo runs out.
+	var s := tuning.light_startup_frames
+	var a := tuning.light_active_frames
+	var r := tuning.light_recovery_frames
+	var w := tuning.combo_window_frames
+	var atk := AttackState.new(s, a, r, w, tuning.light_combo_hits)
+	atk.start(1, 0)
+	var clean := _timeline(atk, s + a + r + 20)
+	_check(clean["startup"] == s, "fatigue 0 keeps authored startup")
+	_check(clean["active"] == a, "fatigue 0 keeps authored active window")
+	_check(clean["recovery"] == r, "fatigue 0 keeps authored recovery")
+	_check(clean["chained"] == mini(w, r), "fatigue 0 keeps the combo window")
+
+	atk.start(1, 4)
+	_check(atk.fatigue_frames == 4, "the swing records the fatigue it started with")
+	var tired := _timeline(atk, s + a + r + 20)
+	var expected_recovery := r + (0 if _negative else 4)
+	_check(tired["startup"] == s, "fatigue never touches startup")
+	_check(tired["active"] == a, "fatigue never touches the active window")
+	_check(tired["recovery"] == expected_recovery, "fatigue extends recovery only")
+	_check(tired["chained"] == mini(w, r), "the combo window stays the authored length while fatigued")
+
+
+# Runs one swing to completion and counts how many physics frames each phase held.
+func _timeline(atk: AttackState, limit: int) -> Dictionary:
+	var counts := {"startup": 0, "active": 0, "recovery": 0, "chained": 0}
+	for tick in limit:
+		if atk.phase == AttackState.Phase.STARTUP:
+			counts["startup"] += 1
+		elif atk.phase == AttackState.Phase.ACTIVE:
+			counts["active"] += 1
+		elif atk.phase == AttackState.Phase.RECOVERY:
+			counts["recovery"] += 1
+			if atk.can_combo():
+				counts["chained"] += 1
+		atk.tick()
+	return counts
 
 
 func _test_combo_window() -> void:
