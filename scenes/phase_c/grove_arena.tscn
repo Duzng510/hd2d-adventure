@@ -1,4 +1,4 @@
-[gd_scene load_steps=34 format=3]
+[gd_scene load_steps=35 format=3]
 
 [ext_resource type="Script" path="res://scripts/phase_c/grove_arena.gd" id="1_arena"]
 [ext_resource type="Script" path="res://scripts/phase_a/player_controller.gd" id="2_player"]
@@ -13,6 +13,7 @@
 [ext_resource type="Script" path="res://scripts/phase_c/wave_hud.gd" id="11_whud"]
 [ext_resource type="Resource" path="res://scripts/combat/combat_tuning.tres" id="12_tuning"]
 [ext_resource type="PackedScene" path="res://scenes/combat/grunt.tscn" id="13_grunt"]
+[ext_resource type="PackedScene" path="res://scenes/combat/swarm.tscn" id="14_swarm"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
 sky_top_color = Color(0.35, 0.45, 0.6, 1)
@@ -260,7 +261,8 @@ tuning = ExtResource("12_tuning")
 [node name="WaveEncounter" type="Node" parent="."]
 script = ExtResource("10_wave")
 tuning = ExtResource("12_tuning")
-enemy_scene = ExtResource("13_grunt")
+enemy_scenes = {"grunt": ExtResource("13_grunt"), "swarm": ExtResource("14_swarm")}
+wave_roles = [["grunt", "grunt", "swarm", "swarm", "swarm"], ["grunt", "grunt", "grunt", "grunt"], ["grunt"]]
 
 [node name="CameraRig" type="Camera3D" parent="."]
 script = ExtResource("3_cam")

@@ -36,15 +36,15 @@ func _ready() -> void:
 	_player_combat = _player.get_node("PlayerCombat")
 	_director = get_node(director_path)
 	_ai = GruntAI.new(
-		tuning.grunt_detect_range,
-		tuning.grunt_attack_range,
-		tuning.grunt_telegraph_frames,
-		tuning.grunt_active_frames,
-		tuning.grunt_recovery_frames
+		_detect_range(),
+		_attack_range(),
+		_telegraph_frames(),
+		_active_frames(),
+		_recovery_frames()
 	)
-	health = Health.new(tuning.grunt_max_hp)
+	health = Health.new(_max_hp())
 	_body_material = StandardMaterial3D.new()
-	_body_material.albedo_color = BASE_COLOR
+	_body_material.albedo_color = _base_color()
 	_body_mesh.material_override = _body_material
 	_telegraph.visible = false
 	var telegraph_material := StandardMaterial3D.new()
@@ -106,38 +106,38 @@ func reset() -> void:
 	_body_mesh.visible = true
 	_telegraph.visible = false
 	_hurtbox.collision_layer = 32
-	_body_material.albedo_color = BASE_COLOR
+	_body_material.albedo_color = _base_color()
 
 
 func _handle_events() -> void:
 	if _ai.alert_pending:
 		_ai.alert_pending = false
-		_director.log_event(&"grunt", &"alert")
+		_director.log_event(_log_entity(), &"alert")
 	if _ai.state == _previous_state:
 		return
 	match _ai.state:
 		GruntAI.State.CHASE:
 			_telegraph.visible = false
-			_body_material.albedo_color = BASE_COLOR
+			_body_material.albedo_color = _base_color()
 		GruntAI.State.TELEGRAPH:
 			_attack_id += 1
 			_hitbox.rotation.y = atan2(-_ai.attack_dir.z, _ai.attack_dir.x)
 			_telegraph.visible = true
-			_body_material.albedo_color = TELEGRAPH_COLOR
-			_director.log_event(&"grunt", &"telegraph_start", _attack_id)
+			_body_material.albedo_color = _telegraph_color()
+			_director.log_event(_log_entity(), &"telegraph_start", _attack_id)
 		GruntAI.State.ACTIVE:
 			_telegraph.visible = false
-			_body_material.albedo_color = BASE_COLOR
-			_director.log_event(&"grunt", &"telegraph_end", _attack_id)
-			_director.log_event(&"grunt", &"active_start", _attack_id)
+			_body_material.albedo_color = _base_color()
+			_director.log_event(_log_entity(), &"telegraph_end", _attack_id)
+			_director.log_event(_log_entity(), &"active_start", _attack_id)
 		GruntAI.State.RECOVERY:
-			_director.log_event(&"grunt", &"active_end", _attack_id)
+			_director.log_event(_log_entity(), &"active_end", _attack_id)
 	_previous_state = _ai.state
 
 
 func _move() -> void:
-	if _ai.state == GruntAI.State.CHASE and _ai.distance > tuning.grunt_attack_range:
-		velocity = _ai.move_dir * tuning.grunt_approach_speed
+	if _ai.state == GruntAI.State.CHASE and _ai.distance > _attack_range():
+		velocity = _ai.move_dir * _approach_speed()
 	else:
 		velocity = Vector3.ZERO
 	move_and_slide()
@@ -164,9 +164,9 @@ func _resolve_damage() -> void:
 			continue
 		if not _registry.try_register(_attack_id, PLAYER_TARGET_ID):
 			continue
-		var applied := _player_combat.apply_hit(tuning.grunt_damage)
-		_director.log_event(&"grunt", &"hit", _attack_id, PLAYER_TARGET_ID)
-		_director.log_event(&"grunt", &"damage", _attack_id, PLAYER_TARGET_ID, applied)
+		var applied := _player_combat.apply_hit(_damage())
+		_director.log_event(_log_entity(), &"hit", _attack_id, PLAYER_TARGET_ID)
+		_director.log_event(_log_entity(), &"damage", _attack_id, PLAYER_TARGET_ID, applied)
 		_director.request_hitstop(tuning.hitstop_frames)
 
 
@@ -177,12 +177,56 @@ func _tick_flash() -> void:
 	if _flash_frames > 3:
 		_body_material.albedo_color = Color.WHITE
 	elif _flash_frames == 0:
-		_body_material.albedo_color = TELEGRAPH_COLOR if _ai.state == GruntAI.State.TELEGRAPH else BASE_COLOR
+		_body_material.albedo_color = _telegraph_color() if _ai.state == GruntAI.State.TELEGRAPH else _base_color()
 
 
 func _die() -> void:
-	_director.log_event(&"grunt", &"death", _attack_id)
+	_director.log_event(_log_entity(), &"death", _attack_id)
 	velocity = Vector3.ZERO
 	_body_mesh.visible = false
 	_telegraph.visible = false
 	_hurtbox.collision_layer = 0
+
+
+func _max_hp() -> int:
+	return tuning.grunt_max_hp
+
+
+func _detect_range() -> float:
+	return tuning.grunt_detect_range
+
+
+func _attack_range() -> float:
+	return tuning.grunt_attack_range
+
+
+func _approach_speed() -> float:
+	return tuning.grunt_approach_speed
+
+
+func _telegraph_frames() -> int:
+	return tuning.grunt_telegraph_frames
+
+
+func _active_frames() -> int:
+	return tuning.grunt_active_frames
+
+
+func _recovery_frames() -> int:
+	return tuning.grunt_recovery_frames
+
+
+func _damage() -> int:
+	return tuning.grunt_damage
+
+
+func _base_color() -> Color:
+	return BASE_COLOR
+
+
+func _telegraph_color() -> Color:
+	return TELEGRAPH_COLOR
+
+
+func _log_entity() -> StringName:
+	return &"grunt"

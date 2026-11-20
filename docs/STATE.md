@@ -1,5 +1,5 @@
 # PROJECT STATE
-Cập nhật: 2026-11-20 (Project Day 2) | Commit: 44bcc68 (T-018 tasks 1–4) | Branch: `phase-c/t018-arena-wave` (T-018)
+Cập nhật: 2026-11-20 (Project Day 2) | Commit: fac751d (T-019 tasks 1–4) | Branch: `phase-c/t019-swarm` (T-019)
 
 ## Phase hiện tại
 Phase B — Combat Prototype (bắt đầu 2026-11-20). Phase A thoát theo **D-009 waiver**: gates 1–5 đạt (D-007/D-008 Accepted; lưới pixel khóa, anchor_dev = sprite_dev = 0, residual 0 px); L4 playtest Phase A **Not Run** — cảm nhận gom vào L4 Phase B cùng build. **T-008 DONE**: gate definitions Phase B (B1–B7, D1–D3) user xác nhận 2026-11-20; COMBAT_SPEC APPROVED; `combat_tuning.tres` + physics layers 3–6 + InputMap combat sẵn sàng; D-010 mouse snapshot. **T-009 DONE**: kernel thuần logic (AttackState/InputBuffer/DodgeState/Health/HitRegistry) + test 92 checks; negative control fail đúng 3 check duplicate (exit 1). **T-010 DONE**: player combat (hitbox/hurtbox Area3D, mouse-snapshot hitbox, swing arc, hitstop, combat log CSV, F1 overlay) — log in-scene 1 hit/1 damage cho 1 swing, hit trong active window, hitstop +3 tick; 5 ảnh evidence đã xem. **T-011 DONE**: Grunt AI thuần logic (idle→chase→telegraph→active→recovery, alert event, telegraph lock-in) + node (chase, telegraph visual, damage player, death); test 16 checks; capture 6 ảnh: telegraph 20 frame đúng tuning, 1 hit/attack, player→Grunt 1 hit/1 damage, player death log. **T-012 DONE**: encounter loop (thắng/thua/reset R sau 120 tick, 10 run liên tiếp headless) + HUD HP trạng thái; 4 ảnh HUD đã xem; capture có `encounter_win` (3 đòn, frame 90) → reset 210 → `encounter_lose` 542. **T-013**: Playtest Brief sẵn sàng (`docs/phase-b/PLAYTEST_BRIEF.md`) — chờ user L4. **T-014 DONE**: automated gate B2/B3/D Passed với negative controls (B2: 12 swing 1 hit/damage, kernel 98 checks; B3: 10 trial alert 0 tick, telegraph 1.292, wall_min 0.350; D1–D3 đủ evidence); B4.1/4.2 đạt, B4.3 chờ L4; ẩn placeholder telegraph quanh player trước L4. **T-015 DONE**: L4 session 13 run liền (11 W hợp lệ, 2 run user cố ý đứng yên bị loại, 12 reset, 0 SCRIPT ERROR) + dodge run riêng (20 Space, W) — B1/B4/B5/B6 Passed; B7 Incomplete vì B7.3 **Not Run** (chưa test spam thuần, user chưa muốn thêm cơ chế); Phase B exit chưa đạt. **T-016 DONE**: harness spam 10 run — **10/10 W**, 87 tick/run, mỗi run ăn 1 hit mà không chết; passive control 10/10 L (332 tick/run) → **B7.3 Fail, B7 Failed**. **D-012 waiver (MP 8.6)**: user duyệt thoát Phase B 2026-11-20 — B7 giữ Failed; cơ chế GDD 6.8.7 ở backlog, B7.3 phải test lại khi cơ chế được thêm. **Phase C kickoff (T-017)**: user chốt scope 2026-11-20 — 3 vai trò (Grunt + Swarm + Ranged), mini-boss 2 phase, reward shortcut + hồi máu; `docs/phase-c/OPERATIONAL_DEFINITIONS.md` (C1–C3, E1–E5, D1–D3) **CONFIRMED** 2026-11-20 (user "y"); D-013 ghi scope. **T-018 DONE**: arena `scenes/phase_c/grove_arena.tscn` (player + camera + 3 trụ fade + Gate placeholder) + wave kernel thuần logic (3 wave 5/4/1, pause 60 tick, reset, win/lose) + `WaveEncounter`/`WaveHUD` + Grunt scene tái dùng AI T-011; harness 10 run full wave flow `runs=10 wins=10 losses=0 max_wave=3 reset_checks=true ticks=10292` exit 0 (negative exit 1); cổng/reward còn placeholder (T-022).
@@ -87,12 +87,16 @@ MVS-AC1…8 (GDD mục 0, PROPOSED): chưa kiểm chứng — chưa có build ch
   - `wave_encounter.gd`: spawn wave khi player vào `trigger_radius` quanh `player_spawn`, log `wave_start` (value 1-based) tại tick spawn, R reset, win/lose + auto-reset 120 tick; `wave_hud.gd`: HP player, wave, số enemy sống, trạng thái.
   - `grove_arena.tscn` (sàn 20×16 + tường + 3 trụ fade + Gate placeholder) + `grunt.tscn` (Grunt T-011 đóng gói scene, spawn runtime); `run_t018_cycles.tscn` harness aim/spam 10 run: `runs=10 wins=10 losses=0 max_wave=3 reset_checks=true ticks=10292` exit 0, negative `reset_checks=false` exit 1.
   - Validation: L1 `--import` + 4 script exit 0; L2 grove arena 120 frame exit 0; L3 kernel + harness như trên; visual/feel chờ L4.
+- T-019 Swarm role + role-based composition (`scripts/combat/swarm.gd`, `scripts/phase_c/wave_encounter.gd`):
+  - `swarm.gd` kế thừa Grunt qua hook tuning/`_log_entity`: HP 20, telegraph 18 (sàn GDD), active 4, recovery 20, damage 5, approach 3.125 (×1.25 Grunt), detect 6.0, attack_range 1.0; log entity `swarm`, cùng schema event với Grunt.
+  - `wave_encounter.gd`: `enemy_scenes` role→scene + `wave_roles` role theo từng spawn, `wave_size()`/`enemies()`; wave 1 = 2 Grunt + 3 Swarm; wave 2/3 vẫn Grunt placeholder (chờ T-020/T-021).
+  - Evidence: `tests/test_swarm_tuning.gd` 16 checks exit 0 (negative telegraph floor exit 1); `run_t019_swarm.tscn` 3 run `runs=3 wins=3 swarms=3 grunts=2 reset_checks=true` exit 0, negative (xóa mapping swarm) `runs=3 wins=2 swarms=0 grunts=2 reset_checks=false` exit 1; t018 regression `wins=10 max_wave=3 reset_checks=true` exit 0.
 
 ## Đang làm (≤2)
-- (trống — T-018 DONE; tiếp theo T-019 Swarm)
+- (trống — T-019 DONE; tiếp theo T-020 Ranged)
 
 ## Next (3–5)
-- T-019 Swarm role → T-020 Ranged + projectile → T-021 Mini-boss 2 phase → T-022 Reward | Dep: T-018 DONE
+- T-020 Ranged + projectile → T-021 Mini-boss 2 phase → T-022 Reward | Dep: T-019 DONE
 - T-023 Evidence E1–E5 automated + negative controls → T-024 L4 session 10 attempts | Dep: T-019…T-022
 - B7.3 retest bằng harness spam khi cơ chế chống spam (GDD 6.8.7) được thêm | Dep: cơ chế được duyệt (D-012)
 - Duyệt MVS-AC1…8 + đặt ngưỡng MVS-AC2 | Dep: user
@@ -105,6 +109,7 @@ Phase C stretch (extended encounter, GDD mục 12) → Phase D MVS (field Verdan
 - Ngưỡng pass/fail playtest MVS-AC2 chưa đặt (GDD: lần đầu chỉ tạo baseline).
 
 ## Known issues
+- (T-019) Wave 2/3 dùng grunt placeholder đến khi T-020/T-021 thay composition.
 - (T-011) Grunt body `collision_layer = 0` → player có thể đi xuyên Grunt; chưa đổi mask player (D-005) — đánh giá ở L4.
 - (T-012) FPS combat chưa đo thật: số fps trên ảnh capture là artifact `--fixed-fps`; đo ở L4.
 - (T-014) AI chase không pathfind: bị tường chặn đứng (không xuyên — B3.3 Passed); xem xét mức ảnh hưởng khi L4.
@@ -128,10 +133,8 @@ Phase C stretch (extended encounter, GDD mục 12) → Phase D MVS (field Verdan
 - **(G3, đánh đổi) Fade làm vật che ghostly** (mất cảm giác đặc); cần user chốt + cân nhắc outline khi fade. Ray đơn tâm player có thể sót che một phần.
 
 ## DONE gần đây (≤5)
+- T-019 | Swarm role + role-based wave composition + harness | DONE — L3 swarm tuning 16 checks (negative telegraph floor exit 1); harness 3 run `runs=3 wins=3 swarms=3 grunts=2 reset_checks=true` exit 0, negative (thiếu swarm mapping) exit 1; t018 regression 10/10 wins, max_wave=3.
 - T-018 | Arena + wave kernel + HUD + harness | DONE — L3 kernel 16 checks (negative exit 1); L2 10 run full wave flow (runs=10 wins=10 losses=0 max_wave=3 reset_checks=true ticks=10292, negative exit 1); gate placeholder chưa mở (T-022).
 - T-017 | Phase C kickoff — gate doc C1–C3 + E1–E5 + scope 3 vai trò/boss 2 phase/shortcut+heal | DONE — user xác nhận "y"; D-013 Accepted.
 - T-016 | B7.3 spam test | DONE — spam 10/10 W (87 tick/run, 1 hit nhận/run), passive 10/10 L (332 tick/run) → B7.3 Fail, B7 Failed; Phase B exit chưa đạt.
 - T-015 | L4 session + chấm gate còn lại | DONE — 11 run hợp lệ (2 idle loại), 12 reset, 0 SCRIPT ERROR; Resp/Read 4/5, a/b/c 33/33, x/n 5/5; dodge run 20 Space W; B1/B4/B5/B6 Passed, B7.1/B7.2 Passed.
-- T-013 | Playtest Brief + L4 10-encounter protocol | DONE — brief + mẫu báo cáo + log CSV; session user chơi 13 run liền; ghi nhận 2 run đứng yên chủ đích.
-- T-014 | Automated gate evidence B2/B3/D + kernel HP-reset + ẩn placeholder telegraph | DONE — B2 12 swing 1 hit/damage (negative exit 1); B3 10 trial alert 0 tick, telegraph 1.292, wall 0.350 (negative exit 1); B4.1 20 frame; D1–D3 đủ; ảnh B3 đã xem.
-- T-012 | Encounter loop win/lose/reset + HUD + 10 run liên tiếp | DONE — cycles `runs=10 losses=10 reset_checks=true` exit 0 (negative exit 1); 4 ảnh HUD đã xem; win/reset/lose log đúng; L1/L2/capture xanh.
