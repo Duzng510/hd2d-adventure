@@ -222,6 +222,14 @@ function median(values) {
 	return sorted[Math.floor(sorted.length / 2)];
 }
 
+// Median distance between consecutive sample rows, in ticks.
+function sampleGap(samples) {
+	const frames = samples.map((sample) => Number(sample.frame)).sort((left, right) => left - right);
+	const gaps = [];
+	for (let index = 1; index < frames.length; index += 1) gaps.push(frames[index] - frames[index - 1]);
+	return median(gaps) === '-' ? 0 : median(gaps);
+}
+
 // Assigns probe rows to runs by frame window, then reduces them. Windows are
 // half-open against the next run's start, so the ticks between a death and its
 // reset still belong to the run that died.
@@ -258,12 +266,25 @@ function attachProbe(runs, rows, events) {
 		const launch = group.samples.filter((sample) => Number(sample.frame) <= LAUNCH_FRAMES)
 			.map((sample) => numberOr(sample.fps, 0)).filter((value) => value > 0);
 		const recovery = group.samples.filter((sample) => numberOr(sample.boss_state, -1) === BOSS_RECOVERY);
-		const landed = events.filter((event) => event.event === 'damage' && event.entity === 'player'
-			&& event.frame >= run.startFrame && (run.endFrame === null || event.frame <= run.endFrame))
-			.filter((event) => {
-				const before = group.samples.filter((sample) => Number(sample.frame) <= event.frame).pop();
-				return before !== undefined && numberOr(before.boss_state, -1) === BOSS_RECOVERY;
-			}).length;
+		// Sample rows land every few ticks; the gap is measured from the file so a
+		// changed sample rate can never silently rescale the window.
+		const gap = sampleGap(group.samples);
+		// Empty cells are '' and Number('') is 0, so the trace has to test the raw
+		// field: treating a missing boss_hp as 0 invents damage out of nothing.
+		const trace = group.samples
+			.filter((sample) => sample.boss_hp !== '' && sample.boss_state !== ''
+				&& Number(sample.boss_hp) >= 0 && Number(sample.boss_state) >= 0)
+			.map((sample) => ({ frame: Number(sample.frame), hp: Number(sample.boss_hp), state: Number(sample.boss_state) }));
+		let dmgInRecovery = 0;
+		let dmgTraced = 0;
+		for (let index = 1; index < trace.length; index += 1) {
+			const drop = trace[index - 1].hp - trace[index].hp;
+			if (drop <= 0) continue;
+			dmgTraced += drop;
+			if (trace[index].state === BOSS_RECOVERY || trace[index - 1].state === BOSS_RECOVERY) dmgInRecovery += drop;
+		}
+		const fightTicks = run.wave3Frame === null || run.endFrame === null ? 0 : run.endFrame - run.wave3Frame;
+		const recoveryTicks = recovery.length * gap;
 		run.probe = {
 			hits: group.hits.length,
 			readable: leads.filter((lead) => lead >= TELEGRAPH_FLOOR).length,
@@ -275,8 +296,12 @@ function attachProbe(runs, rows, events) {
 			cover: share(group.hits.filter((hit) => hit.nearobs === '1').length, group.hits.length),
 			killer: group.deaths.length === 0 ? '-' : String(group.deaths[0].src),
 			bossHpLeft: group.deaths.length === 0 ? '-' : numberOr(group.deaths[0].boss_hp, -1),
-			recoveryTicks: recovery.length,
-			hitsInRecovery: landed,
+			recoveryTicks,
+			fightTicks,
+			recoveryShare: share(recoveryTicks, fightTicks),
+			dmgInRecovery,
+			dmgTraced,
+			punishShare: share(dmgInRecovery, dmgTraced),
 			fpsMin: fps.length === 0 ? '-' : Math.min(...fps),
 			fpsMedian: median(fps),
 			fpsLaunchMin: launch.length === 0 ? '-' : Math.min(...launch),
@@ -288,6 +313,11 @@ function attachProbe(runs, rows, events) {
 		if (breached > 0) problems.push(`run ${run.index}: ${breached} hit(s) landed with only ${run.probe.minLead} usable telegraph frames (< ${TELEGRAPH_FLOOR})`);
 		if (unknown > 0) problems.push(`run ${run.index}: ${unknown} hit(s) had no telegraph record at all`);
 		if (group.deaths.length > 1) problems.push(`run ${run.index}: ${group.deaths.length} death rows in one run`);
+		// Two independent readings of the same fact must agree: the log counts damage
+		// rows, the probe watches boss_hp fall.
+		if (run.wave3Frame !== null && dmgTraced > 0 && dmgTraced !== run.bossDamageDealt) {
+			problems.push(`run ${run.index}: boss_hp trace shows ${dmgTraced} damage to the boss, the log recorded ${run.bossDamageDealt}`);
+		}
 	}
 	return problems;
 }
@@ -295,19 +325,27 @@ function attachProbe(runs, rows, events) {
 function probeTable(runs) {
 	const rows = runs.filter((run) => run.probe !== undefined).map((run) => {
 		const probe = run.probe;
-		return `| ${run.index} | ${probe.hits} | ${probe.readable}/${probe.hits} | ${probe.minLead} | ${probe.moved} | ${probe.dodgeReady} | ${probe.cover} | ${probe.killer} | ${probe.bossHpLeft} | ${probe.hitsInRecovery}/${probe.recoveryTicks} | ${probe.fpsMin} / ${probe.fpsMedian} (${probe.fpsLaunchMin}) | ${probe.shots} |`;
+		return `| ${run.index} | ${probe.hits} | ${probe.readable}/${probe.hits} | ${probe.minLead} | ${probe.moved} | ${probe.dodgeReady} | ${probe.cover} | ${probe.killer} | ${probe.bossHpLeft} | ${probe.recoveryTicks}t (${probe.recoveryShare}) | ${probe.dmgInRecovery}/${probe.dmgTraced} (${probe.punishShare}) | ${probe.fpsMin} / ${probe.fpsMedian} (${probe.fpsLaunchMin}) | ${probe.shots} |`;
 	}).join('\n');
+	const withBoss = runs.filter((run) => run.probe !== undefined && run.probe.dmgTraced > 0);
+	const dmgIn = withBoss.reduce((sum, run) => sum + run.probe.dmgInRecovery, 0);
+	const dmgAll = withBoss.reduce((sum, run) => sum + run.probe.dmgTraced, 0);
+	const windowTicks = withBoss.reduce((sum, run) => sum + run.probe.recoveryTicks, 0);
+	const fightTicks = withBoss.reduce((sum, run) => sum + run.probe.fightTicks, 0);
 	return `## What the rig measured so nobody has to remember (T-025 probe)
 
-| # | Hits | Readable (>= ${TELEGRAPH_FLOOR}f) | Min usable lead | Moved after telegraph | Dodge was ready | Taken at cover/wall | Killed by | Boss HP left | Hits in boss recovery | fps min / median (launch) | Death PNGs |
-|---|------|--------------------|-----------------|-----------------------|-----------------|---------------------|-----------|--------------|---------------------|------------------|--------------|
+| # | Hits | Readable (>= ${TELEGRAPH_FLOOR}f) | Min usable lead | Moved after telegraph | Dodge was ready | Taken at cover/wall | Killed by | Boss HP left | Recovery window | Boss dmg in recovery | fps min / median (launch) | Death PNGs |
+|---|------|--------------------|-----------------|-----------------------|-----------------|---------------------|-----------|--------------|-----------------|----------------------|------------------|--------------|
 ${rows}
 
 \`usable lead\` is the raw telegraph gap minus the hitstop ticks frozen for both
-fighters, so it is what a human actually had. \`Hits in boss recovery\` counts the
-player's damage rows that landed while the sampled boss state was RECOVERY - the
-punish window, used over open. fps comes from the probe's own samples, so C3.3
-needs no HUD reading; in a \`--fixed-fps\` capture it is meaningless by definition.
+fighters, so it is what a human actually had. The punish window is read two ways:
+how much of the boss fight the player spent in RECOVERY, and how much of the
+damage they dealt landed inside it - a window that is open but carries no damage
+is a different problem from one that is short. Pooled here: **${share(dmgIn, dmgAll)}**
+of boss damage landed in the recovery window, which was **${share(windowTicks, fightTicks)}**
+of the measured boss-fight ticks. fps comes from the probe's own samples, so C3.3 needs
+no HUD reading; in a \`--fixed-fps\` capture it is meaningless by definition.
 `;
 }
 
@@ -319,6 +357,10 @@ function buildReport(source, events, runs, problems, engine, expectedRuns, probe
 	const allProblems = problems.concat(probeProblems);
 	const measured = probe === null ? [] : runs.filter((run) => run.probe !== undefined && run.probe.hits > 0);
 	const readable = measured.reduce((sum, run) => sum + run.probe.readable, 0);
+	const withBoss = measured.filter((run) => run.probe.dmgTraced > 0);
+	const punishShare = withBoss.reduce((sum, run) => sum + run.probe.dmgTraced, 0) === 0 ? '-'
+		: share(withBoss.reduce((sum, run) => sum + run.probe.dmgInRecovery, 0),
+			withBoss.reduce((sum, run) => sum + run.probe.dmgTraced, 0));
 	const fpsMin = measured.length === 0 ? null : Math.min(...measured.map((run) => run.probe.fpsMin).filter((value) => typeof value === 'number'));
 	const fpsMedian = measured.length === 0 ? '-' : Math.max(...measured.map((run) => run.probe.fpsMedian).filter((value) => typeof value === 'number'));
 	const fpsLaunchMin = measured.length === 0 ? '-' : Math.min(...measured.map((run) => run.probe.fpsLaunchMin).filter((value) => typeof value === 'number'));
@@ -376,6 +418,7 @@ ${problems.length === 0 ? 'none' : problems.map((line) => `- ${line}`).join('\n'
 			bossTelegraphMin: Math.min(...runs.map((run) => run.minBossTelegraph).filter(Number.isFinite), 999),
 			probeRows: probe === null ? 0 : probe.rows.length,
 			readableShare: `${readable}/${measured.reduce((sum, run) => sum + run.probe.hits, 0)}`,
+			punishShare,
 			fpsPlayMin: fpsMin === null ? '-' : fpsMin,
 			fpsLaunchMin: fpsLaunchMin,
 			scriptErrors: engine === null ? 'n/a' : engine.scriptErrors,
@@ -471,6 +514,12 @@ function probeRow(cells) {
 	return PROBE_HEADER.split(',').map((column) => (cells[column] === undefined ? '' : String(cells[column]))).join(',');
 }
 
+function wave3Frame(events) {
+	const found = events.filter((event) => event.event === 'wave_start' && event.value === 3).pop();
+	if (found === undefined) throw new Error('fixture has no wave 3');
+	return found.frame;
+}
+
 // Probe sidecar for the fixtures: one h row per damage-to-player event with the
 // real telegraph gap, plus 10 Hz samples, so the probe path is exercised by the
 // same session rather than by a file that merely parses.
@@ -479,10 +528,27 @@ function baseProbe(events, options = {}) {
 	const telegraphs = {};
 	const rows = [];
 	const hits = [];
+	const trace = options.bossTrace; // { from, damage, inRecovery } - a boss fight to grade
+	const states = [2, 3, 4]; // CHASE, TELEGRAPH, RECOVERY
+	let bossHp = 300;
+	let traced = 0;
+	let step = 0;
 	for (let frame = 6; frame <= events[events.length - 1].frame; frame += 6) {
+		const inTrace = trace !== undefined && frame >= trace.from;
+		const state = inTrace ? states[step % 3] : -1;
+		let boss_hp = -1;
+		if (inTrace) {
+			const punishTick = trace.inRecovery ? state === 4 : state !== 4;
+			// Never drop on the first traced sample: without a full-hp baseline there
+			// is nothing for the scorer to compare against, and the damage vanishes.
+			if (punishTick && traced > 0 && bossHp > 300 - trace.damage) bossHp -= 10;
+			traced += 1;
+			boss_hp = bossHp;
+		}
+		step += 1;
 		rows.push(probeRow({
 			frame, kind: 's', hp: 100, x: 0, z: 0, nearobs: 2, dodge: 1, swing: 0,
-			boss_hp: -1, boss_state: -1, fps: frame <= 96 ? (options.launchFps ?? fps) : fps,
+			boss_hp, boss_state: state, fps: frame <= 96 ? (options.launchFps ?? fps) : fps,
 		}));
 	}
 	for (const event of events) {
@@ -524,6 +590,9 @@ const CASES = [
 	{ name: 'probe-clean', broken: null, expect: { readableShare: '7/7' }, events: () => baseSession(2), probe: (events) => baseProbe(events) },
 	{ name: 'probe-unreadable', broken: `usable telegraph frames (< ${TELEGRAPH_FLOOR})`, events: () => baseSession(2), probe: (events) => baseProbe(events, { firstLead: TELEGRAPH_FLOOR - 9 }) },
 	{ name: 'probe-desync', broken: 'the two files are not the same session', events: () => baseSession(2), probe: (events) => baseProbe(events, { dropHits: 1 }) },
+	{ name: 'probe-punish-used', broken: null, expect: { punishShare: '100%' }, events: () => baseSession(2), probe: (events) => baseProbe(events, { bossTrace: { from: wave3Frame(events), damage: 10, inRecovery: true } }) },
+	{ name: 'probe-punish-unused', broken: null, expect: { punishShare: '0%' }, events: () => baseSession(2), probe: (events) => baseProbe(events, { bossTrace: { from: wave3Frame(events), damage: 10, inRecovery: false } }) },
+	{ name: 'punish-trace-desync', broken: 'boss_hp trace shows', events: () => baseSession(2), probe: (events) => baseProbe(events, { bossTrace: { from: wave3Frame(events), damage: 30, inRecovery: true } }) },
 	{ name: 'missing-header', broken: 'line 1 is not the log header', raw: '0,encounter,wave_start,0,0,1\n10,encounter,encounter_win,0,0,0\n' },
 ];
 
@@ -549,10 +618,11 @@ function selftest(wanted) {
 			const ok = problems.length === 0 && summary.valid === 3 && summary.wins === 2
 				&& (expected.probeRows === undefined || summary.probeRows === expected.probeRows)
 				&& (expected.readableShare === undefined || summary.readableShare === expected.readableShare)
+				&& (expected.punishShare === undefined || summary.punishShare === expected.punishShare)
 				&& (expected.fpsPlayMin === undefined || summary.fpsPlayMin === expected.fpsPlayMin)
 				&& (expected.fpsLaunchMin === undefined || summary.fpsLaunchMin === expected.fpsLaunchMin);
 			failures += ok ? 0 : 1;
-			console.log(`${ok ? 'ok  ' : 'FAIL'} ${item.name}: clean fixture measured valid=${summary.valid} wins=${summary.wins} violations=${problems.length}`);
+			console.log(`${ok ? 'ok  ' : 'FAIL'} ${item.name}: clean fixture measured valid=${summary.valid} wins=${summary.wins} violations=${problems.length} punish=${summary.punishShare}`);
 			for (const line of problems) console.log(`       unexpected red: ${line}`);
 			continue;
 		}
