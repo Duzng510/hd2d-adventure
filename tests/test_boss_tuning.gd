@@ -58,6 +58,12 @@ func _initialize() -> void:
 	_check(boss_node._log_entity() == &"boss", "boss node logs entity boss")
 	_check(boss_node._create_ai() is BossAI, "boss node builds BossAI")
 	boss_node.free()
+	var encounter := WaveEncounter.new()
+	var wave3: Array = encounter.wave_roles[2]
+	var wave2: Array = encounter.wave_roles[1]
+	_check(wave3.size() == 1 and wave3.count("boss") == 1, "wave 3 is the mini-boss")
+	_check(wave2.count("ranged") == 2 and wave2.count("swarm") == 2, "wave 2 composition regression")
+	encounter.free()
 	print("checks=%d failures=%d" % [_checks, _failures.size()])
 	for failure in _failures:
 		print("FAIL: %s" % failure)
