@@ -119,11 +119,12 @@ MVS-AC1…8 (GDD mục 0, PROPOSED): chưa kiểm chứng — chưa có build ch
   - Evidence: `docs/phase-c/evidence/t023/evidence_report.md` + `.json` — sinh bằng lệnh, không sửa tay.
 
 ## Đang làm (≤2)
-- T-024 | L4 session trên `scenes/phase_c/play_arena.tscn` (arena + rig) | IN PROGRESS — D-014 đã tuning lunge; chờ bạn chơi (`run_arena.bat`), phần số đo máy do rig lo, còn lại chỉ Read/Fair/x/Fun → rồi soạn D-016 waiver C1–C3 | Dep: user
-- T-025 | L4 capture rig (probe CSV + death PNG) | IMPLEMENTED — self-check 8/8, negative đỏ đúng lý do, E1–E5 PASSED; DONE khi session người thật đầu tiên đi qua rig | AC: D2/D3 + brief §0 | Dep: T-024
+- T-024 | L4 session trên `scenes/phase_c/play_arena.tscn` (arena + rig) | **DONE theo D-016 waiver** — 2 run hợp lệ, 0/2 win, Read/Fair 5/5, Fun 4/5, C1.3 đạt (thua do kỹ năng user); C1 Not Run / C2 Incomplete / C3 Partial, E1–E5 + D1–D3 Passed | Dep: xong
+- T-025 | L4 capture rig (probe CSV + death PNG) | IMPLEMENTED — đã đi qua session người thật (1246 probe rows, 2 PNG); fps đã kết luận không phải bug; còn body boss che player chờ chốt hướng | AC: D2/D3 + brief §0 | Dep: T-026
 
 ## Next (3–5)
-- T-024: bạn double-click `run_arena.bat` (build `d348280`), chơi bao nhiêu run cũng được, báo "xong" trước khi mở lại game → tôi copy `combat_log.csv` + `l4_probe.csv` + `l4_death_*.png`, chấm và soạn **D-016** waiver C1–C3 | Dep: user
+- T-026 (chưa mở): sửa body boss che player — ring định vị vs fade enemy; quyết định của user, ảnh hưởng trực tiếp punish-usage 6/97 | Dep: user
+- Phase D: MVS field + dungeon (GDD 13); L4 Phase D đo riêng, không vay bằng chứng Phase C | Dep: user
 - Phase D: MVS field + dungeon (GDD 13) sau khi Phase C đóng; nghĩa vụ treo B7.3 (D-012) khi thêm anti-spam | Dep: user
 - B7.3 retest bằng harness spam khi cơ chế chống spam (GDD 6.8.7) được thêm | Dep: cơ chế được duyệt (D-012)
 - Duyệt MVS-AC1…8 + đặt ngưỡng MVS-AC2 | Dep: user
@@ -136,6 +137,8 @@ Phase C stretch (extended encounter, GDD mục 12) → Phase D MVS (field Verdan
 - Ngưỡng pass/fail playtest MVS-AC2 chưa đặt (GDD: lần đầu chỉ tạo baseline).
 
 ## Known issues
+- **(T-025, đã kết luận) fps 19 không phải drop trong combat:** chỉ 6 sample frame 60–90; 1208 sample còn lại không mẫu nào <55 (mean 59,8) → warm-up shader/asset lúc launch. Scorer tách thành "play min 58 / launch min 19" và có fixture `probe-launch-noise` giữ điều này không hỏng âm thầm.
+- **(T-025, mới) Body boss che sprite của player khi đứng sát dưới:** `session2/l4_death_1.png` không còn thấy player (boss 200/300 ngay phía trên), trong khi `l4_death_2.png` cách ~2 m thì thấy rõ. Nguyên nhân cấu trúc: `grove_arena.gd:34` chỉ thêm pillar vào group `fadeable`; enemy body đặt `collision_layer = 0` nên ray mask 1 của `OcclusionFader` không bao giờ chạm; và `_collect()` chỉ chạy khi `_mats` rỗng nên node spawn runtime không đăng ký được. Chưa sửa — chờ user chốt hướng (ring định vị vs fade enemy).
 - **(T-024, đã sửa `3fba5fe`) Boss lặp đòn chuyển phase:** đòn player trúng boss **trong lúc** SWITCH đang chạy re-arm một SWITCH nữa → 2 lần đứng yên ~1.5 s/run, `boss_phase` 2 dòng/run. Chốt bằng `attack != SWITCH` trong `report_damage`; mắt user vẫn phải xác nhận ở L4 (brief §7).
 - (T-021) Body boss 1.6×2.4 m che phần trên của decal telegraph (4 ảnh đã xem) — decal vẫn đọc được nhờ viền; silhouette/chiều cao boss chốt ở Art Spec Phase D.
 - (T-021) Boss chase/lunge không pathfind (kế thừa known issue T-014): lunge có thể bị tường chặn giữa đường — đánh giá mức ảnh hưởng ở L4.
