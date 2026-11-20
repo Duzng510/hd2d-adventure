@@ -119,10 +119,10 @@ MVS-AC1…8 (GDD mục 0, PROPOSED): chưa kiểm chứng — chưa có build ch
   - Evidence: `docs/phase-c/evidence/t023/evidence_report.md` + `.json` — sinh bằng lệnh, không sửa tay.
 
 ## Đang làm (≤2)
-- T-024 | L4 session 10 run trên `scenes/phase_c/grove_arena.tscn` | IMPLEMENTED — brief + scorer + build khóa ở `3ada4db`, chờ user chơi và gửi báo cáo (L4 là User-reported) | AC: C1–C3 | Dep: user
+- T-024 | L4 session trên `scenes/phase_c/grove_arena.tscn` | IMPLEMENTED — user chốt **3 run định tính + waiver C1–C3** (brief §0); chờ 5 dòng báo cáo, tôi đo + soạn D-014 | AC: C1–C3 | Dep: user
 
 ## Next (3–5)
-- T-024: user chơi 10 run hợp lệ MỘT session (`run_arena.bat`), gửi form §5 + output `node tools/score_l4.mjs` → chấm C1/C2/C3, suy ra exit Phase C | Dep: user
+- T-024: user chơi 3 run (`run_arena.bat`) + 5 dòng báo cáo → tôi chạy `node tools/score_l4.mjs --runs 3`, soạn **D-014** waiver C1 Not Run / C2 Incomplete / C3 Partial (MP 8.6), suy exit Phase C | Dep: user
 - B7.3 retest bằng harness spam khi cơ chế chống spam (GDD 6.8.7) được thêm | Dep: cơ chế được duyệt (D-012)
 - Duyệt MVS-AC1…8 + đặt ngưỡng MVS-AC2 | Dep: user
 

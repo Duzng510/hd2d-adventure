@@ -1,8 +1,27 @@
 # PLAYTEST BRIEF — PHASE C (L4, T-024)
 
-> Trạng thái: **sẵn sàng chơi** — chờ user chạy 10 encounter trong MỘT session và gửi báo cáo theo mẫu §5.
+> Trạng thái: **sẵn sàng chơi** — user chốt đường 3 run định tính + waiver (§0); protocol 10 run đầy đủ vẫn ở §1–§8.
 > Build: nhánh `phase-c/t024-l4-session`, commit `3ada4db` (scorer + launcher) trên nền `3fba5fe` (sửa boss lặp đòn chuyển phase). Đây là build **khóa cho session** — không đổi tuning, không pull code giữa chừng (C1.3a).
 > Môi trường: Windows (i5-13420H / Intel UHD / 24 GB), 1280×720, Forward+ Vulkan. Bàn phím + chuột.
+
+## 0. Đường đã chọn (2026-11-21): **3 run định tính + waiver C1–C3**
+
+Bạn chỉ làm 2 việc. Không copy log, không chạy lệnh, không điền bảng.
+
+1. Double-click **`run_arena.bat`** (build `3ada4db`) → chơi **3 run hợp lệ** (vào arena → đánh tới win hoặc chết → ấn **R** để sang run kế).
+2. Chat lại 5 dòng theo mẫu dưới. Nói "xong" — tôi tự copy `combat_log.csv` từ AppData, chạy `node tools/score_l4.mjs --runs 3`, soạn **D-014** theo MP 8.6 và đóng T-024 kèm waiver.
+
+```
+Run 1: W hay L (dừng ở wave __) | ăn __ đòn, hiểu lý do __ đòn | Read __/5  Fair __/5
+Run 2: ...
+Run 3: ...
+a) Telegraph nào bạn KHÔNG đọc được trước / bị che? (không có thì ghi "không")
+b) Có kẹt, wave không spawn, cổng không mở, hay lỗi gì không?
+```
+
+Dự kiến ghi trong D-014: **C1 Not Run** (3/10 run), **C2 Incomplete** (mean trên 3 mẫu, `x/y` 3 mẫu), **C3 Partial** (0 `SCRIPT ERROR` + chuỗi reset do máy đo, FPS bạn báo), trong khi E1–E5 và D1–D3 vẫn Passed. Rủi ro được chấp nhận: độ khó và readability của encounter nhiều enemy **chưa** có bằng chứng con người → mọi tuning từ Phase D trở đi không có baseline C1.
+
+Muốn C1/C2/C3 thành **Passed** thì vẫn phải đủ 10 run — protocol chuẩn ở §1–§8 dưới đây không đổi, chỉ cần bạn chơi thêm 7 run.
 
 ## 1. Cách chạy
 
