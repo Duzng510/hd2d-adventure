@@ -1,8 +1,8 @@
 # PROJECT STATE
-Cập nhật: 2026-11-20 (Project Day 2) | Commit: 943a691 (T-008) | Branch: `phase-b/t009-combat-kernel` (T-009)
+Cập nhật: 2026-11-20 (Project Day 2) | Commit: 42220ca (T-008) | Branch: `phase-b/t009-combat-kernel` (T-009)
 
 ## Phase hiện tại
-Phase B — Combat Prototype (bắt đầu 2026-11-20). Phase A thoát theo **D-009 waiver**: gates 1–5 đạt (D-007/D-008 Accepted; lưới pixel khóa, anchor_dev = sprite_dev = 0, residual 0 px); L4 playtest Phase A **Not Run** — cảm nhận gom vào L4 Phase B cùng build. **T-008 DONE**: gate definitions Phase B (B1–B7, D1–D3) user xác nhận 2026-11-20; COMBAT_SPEC APPROVED; `combat_tuning.tres` + physics layers 3–6 + InputMap combat sẵn sàng; D-010 mouse snapshot.
+Phase B — Combat Prototype (bắt đầu 2026-11-20). Phase A thoát theo **D-009 waiver**: gates 1–5 đạt (D-007/D-008 Accepted; lưới pixel khóa, anchor_dev = sprite_dev = 0, residual 0 px); L4 playtest Phase A **Not Run** — cảm nhận gom vào L4 Phase B cùng build. **T-008 DONE**: gate definitions Phase B (B1–B7, D1–D3) user xác nhận 2026-11-20; COMBAT_SPEC APPROVED; `combat_tuning.tres` + physics layers 3–6 + InputMap combat sẵn sàng; D-010 mouse snapshot. **T-009 DONE**: kernel thuần logic (AttackState/InputBuffer/DodgeState/Health/HitRegistry) + test 92 checks; negative control fail đúng 3 check duplicate (exit 1).
 
 ## Build: chạy được? (có/không) — cách chạy
 Có (scene load được). Scene chính: `res://scenes/phase_a/phase_a_playground.tscn`. **Chạy không cần mở editor: `run.bat` ở root, hoặc VSCode Ctrl+Shift+B (task "godot: run game", `.vscode/tasks.json`)**; phím trong game: WASD di chuyển, chuột aim, P đổi persp/ortho, L frame log. L2 Passed: headless `--quit-after 120`, EXIT=0, không lỗi. Visual G1–G3 + lighting đã xem thật (Vulkan 1.4.323 Forward+ / Intel UHD, 1280×720).
@@ -45,13 +45,16 @@ MVS-AC1…8 (GDD mục 0, PROPOSED): chưa kiểm chứng — chưa có build ch
   - `camera_rig.gd`: ortho mặc định + `texel_scale = 4` (size tự theo viewport), `snap_to_pixel = true`, `process_priority = -1`, xử lý resize. `player_controller.gd`: `visual_snap` lượng tử hóa vị trí hiển thị sprite về integer px, logic giữ nguyên.
   - Capture 7 config vào `evidence/pixel_t007/` (21 PNG đã xem + CSV 168 dòng); metric sửa sang đo sprite thay vì logic origin.
   - Kết quả: config đủ gói `anchor_dev = sprite_dev = 0.0000`, residual 0 px; thiếu visual snap sprite crawl 0.3334 → metric fail-first. OPERATIONAL_DEFINITIONS §13. L1 3 script + L2 + L3 exit 0, capture exit 0.
+- T-009 combat kernel (`scripts/combat/`):
+  - `attack_state.gd` (frame convention startup/active/recovery, combo window + cap), `input_buffer.gd` (expiry theo tick), `dodge_state.gd` (i-frame window), `health.gd`, `hit_registry.gd` (1 hit/swing/target, `enforce` để negative control).
+  - `tests/test_combat_kernel.gd`: 92 checks — ranh giới frame, combo, buffer, iframe, health, 100 swing 0 duplicate; `-- negative` fail đúng 3 check registry. L1 6 script exit 0; L3 positive exit 0, negative exit 1.
 - T-008 Phase B khởi động (user duyệt thoát Phase A; D-009 waiver):
   - `docs/phase-b/OPERATIONAL_DEFINITIONS.md` (B1–B7, D1–D3, taxonomy, rubric) — **user xác nhận 2026-11-20**; `docs/combat/COMBAT_SPEC.md` APPROVED (v2 khóa frame convention, hitstop, input priority, log semantics; D-010 mouse snapshot).
   - `CombatTuning` + `combat_tuning.tres` (authoritative, HYPOTHESIS trong envelope GDD 6.4); InputMap LMB/Space/F1/R; physics layers 3–6 (AGENTS + D-005).
   - L1 2 script + L3 test 16 checks + L2 playground exit 0; commit f8288c4 + 943a691.
 
 ## Đang làm (≤2)
-- T-009 | Combat kernel (attack timeline/combo/buffer/dodge/health/hit registry) + fail-first tests | IN PROGRESS | AC: frame boundaries đúng convention; 100 swing 0 duplicate; negative control exit 1 | Dep: T-008 DONE
+- (trống — T-009 DONE, chờ user y sang T-010)
 
 ## Next (3–5)
 - T-010 player combat (hitbox/hurtbox, swing visual, hit-stop, combat log CSV, F1 debug hitbox) | Dep: T-009
@@ -84,8 +87,8 @@ Phase C stretch (extended encounter, GDD mục 12) → Phase D MVS (field Verdan
 - **(G3, đánh đổi) Fade làm vật che ghostly** (mất cảm giác đặc); cần user chốt + cân nhắc outline khi fade. Ray đơn tâm player có thể sót che một phần.
 
 ## DONE gần đây (≤5)
+- T-009 | Combat kernel thuần logic + test fail-first | DONE — 92 checks exit 0; negative `-- negative` fail 3 check duplicate (exit 1); ranh giới frame/combo/buffer/iframe đúng spec.
 - T-008 | Gate definitions Phase B + COMBAT_SPEC + tuning + layers + InputMap; user xác nhận 2026-11-20 | DONE — L1/L3 xanh (16 checks), review v2 tích hợp (D-010).
 - T-007 | Implement D-008 Accepted: ortho scale 4 mặc định + camera snap + sprite visual snap | DONE 2026-11-20 — lưới khóa world+sprite (dev 0.0000, residual 0); 21 PNG đã xem; D-007/D-008 Accepted.
 - T-006 | Đo pixel-grid + shimmer 6 config, harness residual biết FAIL trước | DONE 2026-11-20 (branch phase-a/t006-pixel-grid) — L1/L2/L3 Passed, 18 PNG đã xem; D-007 có số liệu, D-008 Proposed.
 - T-004 | Art Spec (Gate 4 user xác nhận) + D-006 Accepted/D-007 Proposed + lighting ambient fix + run.bat/.vscode | DONE 2026-11-20 — ambient hết đen (ảnh đối chiếu); run không cần editor.
-- T-003b | Occlusion rule (fade) + đánh giá G3 | DONE 2026-11-20 — G3.1–3 Pass (before/after renderer thật); giải G2.2 left; quy tắc nay Accepted (D-006).
