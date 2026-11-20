@@ -25,6 +25,7 @@ Action khai báo một lần trong `project.godot`; gameplay chỉ đọc action
 - **Runtime value:** `CombatTuning` (`scripts/combat/combat_tuning.gd`) + `scripts/combat/combat_tuning.tres` — giá trị đang chạy; sửa tuning = sửa `.tres`, không sửa logic.
 - **Validation envelope:** `tests/test_combat_tuning.gd` kiểm tra resource nằm trong khoảng HYPOTHESIS GDD 6.4 (startup 3–6, active 2–4, recovery 8–14, combo window 8–14, buffer 5–8, dodge i-frame 8–14 / tổng 18–28, hitstop 2–5, telegraph ≥18). Đây là **envelope tạm của prototype, không phải design-approved constraint** — muốn ra ngoài envelope phải cập nhật GDD/DECISIONS trước, không sửa test cho vừa.
 - Coverage: startup/active/recovery, combo window + combo hits, buffer, damage, reach; dodge i-frame/total/speed; hitstop; HP player/grunt; detect/attack range, approach speed, telegraph/active/recovery, damage của Grunt.
+- Swarm (Phase C): swarm_max_hp/telegraph/active/recovery/damage/approach/detect/attack_range — HYPOTHESIS gate doc §9; telegraph floor ≥18.
 
 ## 4. Frame model (khóa off-by-one)
 
@@ -95,6 +96,7 @@ Quy tắc:
 - Event bắt buộc: `input_light`, `input_dodge`, `action_start`, `active_start`, `active_end`, `hit`, `damage`, `telegraph_start`, `telegraph_end`, `alert`, `death`, `encounter_reset`.
 - Event encounter (T-012): `encounter_win`, `encounter_lose`; `encounter_reset` có `value` = số run đã hoàn tất.
 - Event encounter Phase C (T-018): `wave_start` với `value` = chỉ số wave 1-based; log tại tick spawn wave, sau `encounter_reset`/run start. Win/lose/reset giữ semantics T-012. Event của vai trò enemy mới (`projectile_*`, `boss_phase`, `reward_granted`) thêm ở T-020/T-021/T-022.
+- Entity Phase C: enemy theo vai trò log entity = &"grunt" hoặc &"swarm" (cùng schema event); wave_start giữ semantics T-018.
 - `telegraph_start` tại frame telegraph đầu tiên; `telegraph_end` tại boundary tick kết thúc telegraph (cùng tick với `active_start`, log trước `active_start`). B4.1 đo `active_start.frame − telegraph_start.frame`.
 - Swing miss vẫn log `active_end`; không bắt buộc `hit`/`damage`. Enemy attack có `attack_id` riêng cho **mỗi** telegraph/attack instance.
 - Diagnostic input→action_start = số tick engine-side (chỉ diagnostic; không đại diện input-to-display — GDD 6.4).
