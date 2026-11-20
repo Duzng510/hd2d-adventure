@@ -62,6 +62,7 @@ function segment(events) {
 				hitsTaken: 0, damageTaken: 0, damageByEnemy: {},
 				hitsDealt: 0, damageDealt: 0, swings: 0, dodges: 0, deaths: {}, projectileFires: 0,
 				rewards: 0, heals: 0, healAmount: 0, bossPhases: [], hitRows: 0, damageRows: 0,
+				wave3Frame: null, bossDamageDealt: 0,
 				openings: [],
 			};
 			runs.push(current);
@@ -69,7 +70,10 @@ function segment(events) {
 			continue;
 		}
 		if (current === null) continue; // pre-trigger idle before the first run, and events after the last reset
-		if (event.event === 'wave_start') current.waves.push(event.value);
+		if (event.event === 'wave_start') {
+			current.waves.push(event.value);
+			if (event.value === 3) current.wave3Frame = event.frame; // wave 3 is the boss alone
+		}
 		else if (event.event === 'encounter_win' || event.event === 'encounter_lose') {
 			current.result = event.event === 'encounter_win' ? 'W' : 'L';
 			current.endFrame = event.frame;
@@ -86,6 +90,7 @@ function segment(events) {
 			current.damageRows += 1;
 			current.hitsDealt += 1;
 			current.damageDealt += event.value;
+			if (current.wave3Frame !== null) current.bossDamageDealt += event.value;
 		} else if (event.event === 'hit' || event.event === 'projectile_hit') {
 			current.hitRows += 1;
 		} else if (event.event === 'action_start' && event.entity === 'player') current.swings += 1;
@@ -122,15 +127,23 @@ function validate(runs) {
 			const key = `${open.entity}#${open.attackId}`;
 			byAttack.set(key, (byAttack.get(key) ?? []).concat(open));
 		}
+		// attack_id is per enemy instance, so three swarms all own "#1" and their rows
+		// interleave: only a role that appears once per run can be measured here. That
+		// is the boss; the per-role floors belong to E1.2 / E2.2 / E3.3 on the frozen
+		// single-role stage.
+		let bossLeads = null;
 		for (const [key, seen] of byAttack) {
-			if (seen.length < 2) continue;
-			if (seen[0].event !== 'telegraph_start' || seen[1].event !== 'active_start') {
-				problems.push(`run ${run.index}: attack ${key} opened with ${seen.map((item) => item.event).join(',')} (expected telegraph_start then active_start)`);
+			if (!key.startsWith('boss#')) continue;
+			if (seen.length === 1 && seen[0].event === 'telegraph_start') continue; // run ended inside the telegraph
+			if (seen.length !== 2 || seen[0].event !== 'telegraph_start' || seen[1].event !== 'active_start') {
+				problems.push(`run ${run.index}: boss attack ${key} opened with ${seen.map((item) => item.event).join(',')} (expected telegraph_start then active_start)`);
 				continue;
 			}
 			const lead = seen[1].frame - seen[0].frame;
+			bossLeads = bossLeads === null ? lead : Math.min(bossLeads, lead);
 			if (lead < TELEGRAPH_FLOOR) problems.push(`run ${run.index}: attack ${key} telegraph lead ${lead} < ${TELEGRAPH_FLOOR}`);
 		}
+		run.minBossTelegraph = bossLeads;
 	}
 	return problems;
 }
@@ -178,7 +191,8 @@ function buildReport(source, events, runs, problems, engine, expectedRuns) {
 		const ticks = run.endFrame === null ? '-' : run.endFrame - run.startFrame;
 		const seconds = run.endFrame === null ? '-' : (ticks / TICKS_PER_SECOND).toFixed(2);
 		const roles = Object.entries(run.damageByEnemy).map(([key, value]) => `${key} ${value}`).join('<br>') || '-';
-		return `| ${run.index} | ${run.result ?? '-'} | ${run.waves.join('>')} | ${ticks} | ${seconds} | ${run.hitsTaken} | ${run.damageTaken} | ${roles} | ${run.hitsDealt} | ${run.swings} | ${run.dodges} | ${run.projectileFires} | ${run.rewards} | ${run.healAmount} | ${valid.includes(run) ? 'valid' : 'INVALID'} |`;
+		const bossSeconds = run.wave3Frame === null || run.endFrame === null ? '-' : ((run.endFrame - run.wave3Frame) / TICKS_PER_SECOND).toFixed(1);
+		return `| ${run.index} | ${run.result ?? '-'} | ${run.waves.join('>')} | ${ticks} | ${seconds} | ${run.hitsTaken} | ${run.damageTaken} | ${roles} | ${bossSeconds} | ${run.wave3Frame === null ? '-' : run.bossDamageDealt} | ${run.hitsDealt} | ${run.swings} | ${run.dodges} | ${run.projectileFires} | ${run.rewards} | ${run.healAmount} | ${valid.includes(run) ? 'valid' : 'INVALID'} |`;
 	}).join('\n');
 	const markdown = `# L4 session measurement - Phase C grove arena
 
@@ -187,8 +201,8 @@ ${events.length} log rows, ${runs.length} run start(s), ${valid.length} valid un
 
 ## Per-run table (C1.2 fields, machine-measured)
 
-| # | W/L | Waves | Ticks | s | Hits taken | HP lost | HP lost by role | Hits dealt | Swings | Dodges | projectile_fire | reward_granted | heal | status |
-|---|-----|-------|-------|---|-----------|---------|-----------------|------------|--------|--------|-----------------|----------------|------|--------|
+| # | W/L | Waves | Ticks | s | Hits taken | HP lost | HP lost by role | boss fight s | dmg dealt to boss | Hits dealt | Swings | Dodges | projectile_fire | reward_granted | heal | status |
+|---|-----|-------|-------|---|-----------|---------|-----------------|--------------|-------------------|------------|--------|--------|-----------------|----------------|------|--------|
 ${rows}
 
 Total hits taken across valid runs = **${hitsTaken}**. That is the denominator \`n\` of
@@ -213,6 +227,7 @@ ${problems.length === 0 ? 'none' : problems.map((line) => `- ${line}`).join('\n'
 		summary: {
 			source, rows: events.length, runs: runs.length, valid: valid.length, wins,
 			losses: valid.length - wins, hitsTaken, violations: problems.length,
+			bossTelegraphMin: Math.min(...runs.map((run) => run.minBossTelegraph).filter(Number.isFinite), 999),
 			scriptErrors: engine === null ? 'n/a' : engine.scriptErrors,
 		},
 		markdown,
@@ -299,11 +314,12 @@ function toCsv(events) {
 const CASES = [
 	{ name: 'clean', broken: null, events: () => baseSession(2) },
 	{ name: 'damage-without-hit', broken: 'damage rows vs', events: () => cloneFirst(baseSession(2), (event) => event.event === 'damage' && event.entity === 'grunt') },
-	{ name: 'short-telegraph', broken: `telegraph lead ${TELEGRAPH_FLOOR - 1} < ${TELEGRAPH_FLOOR}`, events: () => inject(baseSession(2), (event) => event.event === 'telegraph_start', [row(900002, 'swarm', 'telegraph_start', 77, 0, 0), row(900002 + TELEGRAPH_FLOOR - 1, 'swarm', 'active_start', 77, 0, 0)]) },
+	{ name: 'short-telegraph', broken: `telegraph lead ${TELEGRAPH_FLOOR - 1} < ${TELEGRAPH_FLOOR}`, events: () => inject(baseSession(2), (event) => event.event === 'telegraph_start', [row(900002, 'boss', 'telegraph_start', 77, 0, 0), row(900002 + TELEGRAPH_FLOOR - 1, 'boss', 'active_start', 77, 0, 0)]) },
 	{ name: 'abandoned-run', broken: 'abandoned - no encounter_win/encounter_lose', events: () => baseSession(2).concat([row(900100, 'encounter', 'wave_start', 0, 0, 1)]) },
 	{ name: 'win-without-reward', broken: 'win logged reward_granted 0 times', events: () => baseSession(2).filter((event) => event.event !== 'reward_granted') },
 	{ name: 'two-phase-flips', broken: 'boss_phase logged 2 times', events: () => cloneFirst(baseSession(1), (event) => event.event === 'boss_phase') },
 	{ name: 'no-reset-between-runs', broken: 'no encounter_reset before wave 1', events: () => baseSession(2).filter((event) => !(event.event === 'encounter_reset' && event.value === 1)) },
+	{ name: 'swarm-id-collision', broken: null, events: () => cloneFirst(baseSession(2), (event) => event.event === 'telegraph_start' && event.entity === 'grunt') },
 	{ name: 'missing-header', broken: 'line 1 is not the log header', raw: '0,encounter,wave_start,0,0,1\n10,encounter,encounter_win,0,0,0\n' },
 ];
 
