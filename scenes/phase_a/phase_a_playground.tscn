@@ -1,4 +1,4 @@
-[gd_scene load_steps=32 format=3]
+[gd_scene load_steps=34 format=3]
 
 [ext_resource type="Script" path="res://scripts/phase_a/playground.gd" id="1_play"]
 [ext_resource type="Script" path="res://scripts/phase_a/player_controller.gd" id="2_player"]
@@ -9,6 +9,8 @@
 [ext_resource type="Script" path="res://scripts/combat/combat_director.gd" id="7_director"]
 [ext_resource type="Script" path="res://scripts/combat/player_combat.gd" id="8_pcombat"]
 [ext_resource type="Script" path="res://scripts/combat/grunt.gd" id="12_grunt"]
+[ext_resource type="Script" path="res://scripts/combat/encounter_manager.gd" id="13_manager"]
+[ext_resource type="Script" path="res://scripts/combat/combat_hud.gd" id="14_chud"]
 [ext_resource type="Script" path="res://scripts/combat/debug_hitboxes.gd" id="10_debughit"]
 [ext_resource type="Resource" path="res://scripts/combat/combat_tuning.tres" id="11_tuning"]
 
@@ -240,3 +242,9 @@ script = ExtResource("4_hud")
 
 [node name="DebugHitboxes" type="Node3D" parent="."]
 script = ExtResource("10_debughit")
+
+[node name="EncounterManager" type="Node" parent="."]
+script = ExtResource("13_manager")
+
+[node name="CombatHUD" type="CanvasLayer" parent="."]
+script = ExtResource("14_chud")

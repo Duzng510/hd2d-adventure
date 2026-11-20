@@ -1,11 +1,11 @@
 # PROJECT STATE
-Cập nhật: 2026-11-20 (Project Day 2) | Commit: e8f55cb (T-010) | Branch: `phase-b/t011-grunt-ai` (T-011)
+Cập nhật: 2026-11-20 (Project Day 2) | Commit: 1372402 (D-011) | Branch: `phase-b/t012-encounter-loop` (T-012)
 
 ## Phase hiện tại
-Phase B — Combat Prototype (bắt đầu 2026-11-20). Phase A thoát theo **D-009 waiver**: gates 1–5 đạt (D-007/D-008 Accepted; lưới pixel khóa, anchor_dev = sprite_dev = 0, residual 0 px); L4 playtest Phase A **Not Run** — cảm nhận gom vào L4 Phase B cùng build. **T-008 DONE**: gate definitions Phase B (B1–B7, D1–D3) user xác nhận 2026-11-20; COMBAT_SPEC APPROVED; `combat_tuning.tres` + physics layers 3–6 + InputMap combat sẵn sàng; D-010 mouse snapshot. **T-009 DONE**: kernel thuần logic (AttackState/InputBuffer/DodgeState/Health/HitRegistry) + test 92 checks; negative control fail đúng 3 check duplicate (exit 1). **T-010 DONE**: player combat (hitbox/hurtbox Area3D, mouse-snapshot hitbox, swing arc, hitstop, combat log CSV, F1 overlay) — log in-scene 1 hit/1 damage cho 1 swing, hit trong active window, hitstop +3 tick; 5 ảnh evidence đã xem. **T-011 DONE**: Grunt AI thuần logic (idle→chase→telegraph→active→recovery, alert event, telegraph lock-in) + node (chase, telegraph visual, damage player, death); test 16 checks; capture 6 ảnh: telegraph 20 frame đúng tuning, 1 hit/attack, player→Grunt 1 hit/1 damage, player death log.
+Phase B — Combat Prototype (bắt đầu 2026-11-20). Phase A thoát theo **D-009 waiver**: gates 1–5 đạt (D-007/D-008 Accepted; lưới pixel khóa, anchor_dev = sprite_dev = 0, residual 0 px); L4 playtest Phase A **Not Run** — cảm nhận gom vào L4 Phase B cùng build. **T-008 DONE**: gate definitions Phase B (B1–B7, D1–D3) user xác nhận 2026-11-20; COMBAT_SPEC APPROVED; `combat_tuning.tres` + physics layers 3–6 + InputMap combat sẵn sàng; D-010 mouse snapshot. **T-009 DONE**: kernel thuần logic (AttackState/InputBuffer/DodgeState/Health/HitRegistry) + test 92 checks; negative control fail đúng 3 check duplicate (exit 1). **T-010 DONE**: player combat (hitbox/hurtbox Area3D, mouse-snapshot hitbox, swing arc, hitstop, combat log CSV, F1 overlay) — log in-scene 1 hit/1 damage cho 1 swing, hit trong active window, hitstop +3 tick; 5 ảnh evidence đã xem. **T-011 DONE**: Grunt AI thuần logic (idle→chase→telegraph→active→recovery, alert event, telegraph lock-in) + node (chase, telegraph visual, damage player, death); test 16 checks; capture 6 ảnh: telegraph 20 frame đúng tuning, 1 hit/attack, player→Grunt 1 hit/1 damage, player death log. **T-012 DONE**: encounter loop (thắng/thua/reset R sau 120 tick, 10 run liên tiếp headless) + HUD HP trạng thái; 4 ảnh HUD đã xem; capture có `encounter_win` (3 đòn, frame 90) → reset 210 → `encounter_lose` 542.
 
 ## Build: chạy được? (có/không) — cách chạy
-Có (scene load được). Scene chính: `res://scenes/phase_a/phase_a_playground.tscn`. **Chạy không cần mở editor: `run.bat` ở root, hoặc VSCode Ctrl+Shift+B (task "godot: run game", `.vscode/tasks.json`)**; phím trong game: WASD di chuyển, chuột aim, LMB đánh (combo 3 hit), Space né, F1 hitbox/hurtbox, P đổi persp/ortho, L frame log. L2 Passed: headless `--quit-after 120`, EXIT=0, không lỗi. Visual G1–G3 + lighting đã xem thật (Vulkan 1.4.323 Forward+ / Intel UHD, 1280×720).
+Có (scene load được). Scene chính: `res://scenes/phase_a/phase_a_playground.tscn`. **Chạy không cần mở editor: `run.bat` ở root, hoặc VSCode Ctrl+Shift+B (task "godot: run game", `.vscode/tasks.json`)**; phím trong game: WASD di chuyển, chuột aim, LMB đánh (combo 3 hit), Space né, R reset encounter, F1 hitbox/hurtbox, P đổi persp/ortho, L frame log. HUD: HP player/Grunt + trạng thái (ĐANG ĐÁNH / THẮNG / THUA). L2 Passed: headless `--quit-after 120`, EXIT=0, không lỗi. Visual G1–G3 + lighting đã xem thật (Vulkan 1.4.323 Forward+ / Intel UHD, 1280×720).
 
 ## Tiến độ MVS
 MVS-AC1…8 (GDD mục 0, PROPOSED): chưa kiểm chứng — chưa có build chơi được.
@@ -57,16 +57,21 @@ MVS-AC1…8 (GDD mục 0, PROPOSED): chưa kiểm chứng — chưa có build ch
   - Hitbox/hurtbox `Area3D` layers 3/5 (player) + TrainingDummy layer 6; hitbox xoay theo **mouse snapshot** (D-010), damage query bằng shape/transform thật gated active tick; swing arc + dummy flash; hitstop 3 tick qua `CombatDirector` (max policy); combat log CSV `user://combat_log.csv` (in stdout + flush).
   - Evidence `docs/phase-b/evidence/t010/`: 5 PNG đã xem (D1 off/on, startup/active/recovery/end) + CSV: 1 hit + 1 damage/1 swing, hit frame 27 trong active 26–32 (hitstop kéo dài 3 tick).
   - Validation: L1 9 script exit 0; L2 playground exit 0; L3 kernel 97 checks exit 0, negative exit 1; capture renderer thật exit 0.
+- T-012 encounter loop (`scripts/combat/encounter_manager.gd`, `combat_hud.gd`):
+  - Win (Grunt HP 0) / lose (player chết) → HUD banner, auto-reset sau 120 tick; R reset ngay (input, vị trí, HP, AI, phase, buffer/combo, registry, hitstop); log `encounter_win/lose/reset` (value = run index).
+  - `run_t012_cycles.tscn` (headless 10 run): `runs=10 wins=0 losses=10 reset_checks=true ticks=4521` exit 0; negative (HP=0 sau reset) → `reset_checks=false` exit 1.
+  - `capture_t012.tscn` (renderer thật): 4 PNG đã xem (fighting 100/30, win 0/30 THẮNG, after-reset 100/30, lose 0/100 THUA) + CSV win frame 90, reset 210, lose 542.
+  - Capture dùng hook `debug_request_attack()` (đẩy input vào buffer đúng `_combat_frame`) vì press/release quanh `await physics_frame` không tới `_physics_process`; hook + `aim_override_*` mặc định off, ghi COMBAT_SPEC §11.
+  - Validation: L1 2 script exit 0; L2 cycles exit 0; capture exit 0.
 - T-008 Phase B khởi động (user duyệt thoát Phase A; D-009 waiver):
   - `docs/phase-b/OPERATIONAL_DEFINITIONS.md` (B1–B7, D1–D3, taxonomy, rubric) — **user xác nhận 2026-11-20**; `docs/combat/COMBAT_SPEC.md` APPROVED (v2 khóa frame convention, hitstop, input priority, log semantics; D-010 mouse snapshot).
   - `CombatTuning` + `combat_tuning.tres` (authoritative, HYPOTHESIS trong envelope GDD 6.4); InputMap LMB/Space/F1/R; physics layers 3–6 (AGENTS + D-005).
   - L1 2 script + L3 test 16 checks + L2 playground exit 0; commit f8288c4 + 943a691.
 
 ## Đang làm (≤2)
-- (trống — T-011 DONE, chờ user y sang T-012)
+- (trống — T-012 DONE, chờ user y sang T-013)
 
 ## Next (3–5)
-- T-012 encounter manager (win/lose/reset R, 10 run liên tiếp, HUD HP, FPS combat) | Dep: T-011
 - T-013 Playtest Brief + L4 Phase B (10 encounter, rubric MP 9) + tuning 1 tham số/lần | Dep: T-012, user
 - Duyệt MVS-AC1…8 + đặt ngưỡng MVS-AC2 (không chặn Phase B) | Dep: user
 
@@ -79,7 +84,7 @@ Phase C stretch (extended encounter, GDD mục 12) → Phase D MVS (field Verdan
 
 ## Known issues
 - (T-011) Grunt body `collision_layer = 0` → player có thể đi xuyên Grunt; chưa đổi mask player (D-005) — đánh giá ở L4.
-- (T-011) Player chết mới chỉ log + khóa input, chưa có HUD/cue hình ảnh — HUD HP ở T-012.
+- (T-012) FPS combat chưa đo thật: số fps trên ảnh capture là artifact `--fixed-fps`; đo ở L4.
 - (Phase A, D-009) L4 playtest build Phase A **Not Run** (được waiver thoát phase); gom vào L4 Phase B trên cùng build.
 - Môi trường (có trước): `_console.exe` wrapper hỏng — dùng inner exe (AGENTS.md).
 - `quit()` trong SceneTree script không dừng ngay; phải dùng if/else một quit (đã ghi AGENTS.md).
@@ -96,8 +101,8 @@ Phase C stretch (extended encounter, GDD mục 12) → Phase D MVS (field Verdan
 - **(G3, đánh đổi) Fade làm vật che ghostly** (mất cảm giác đặc); cần user chốt + cân nhắc outline khi fade. Ray đơn tâm player có thể sót che một phần.
 
 ## DONE gần đây (≤5)
+- T-012 | Encounter loop win/lose/reset + HUD + 10 run liên tiếp | DONE — cycles `runs=10 losses=10 reset_checks=true` exit 0 (negative exit 1); 4 ảnh HUD đã xem; win/reset/lose log đúng; L1/L2/capture xanh.
 - T-011 | Grunt AI + telegraph + player damage/death | DONE — 16 checks exit 0 (negative exit 1); telegraph 20 frame từ log; 1 hit/attack; player→Grunt 1 hit; death log; 6 ảnh đã xem.
 - T-010 | Player combat: mouse-snapshot hitbox/hurtbox, swing arc, hitstop, combat log CSV, F1 overlay | DONE — log in-scene 1 hit/1 damage (active window), hitstop 3 tick (active_end 32 vs 29), 5 ảnh đã xem; L1/L2/L3 xanh.
 - T-009 | Combat kernel thuần logic + test fail-first | DONE — 92 checks exit 0; negative `-- negative` fail 3 check duplicate (exit 1); ranh giới frame/combo/buffer/iframe đúng spec.
 - T-008 | Gate definitions Phase B + COMBAT_SPEC + tuning + layers + InputMap; user xác nhận 2026-11-20 | DONE — L1/L3 xanh (16 checks), review v2 tích hợp (D-010).
-- T-007 | Implement D-008 Accepted: ortho scale 4 mặc định + camera snap + sprite visual snap | DONE 2026-11-20 — lưới khóa world+sprite (dev 0.0000, residual 0); 21 PNG đã xem; D-007/D-008 Accepted.
