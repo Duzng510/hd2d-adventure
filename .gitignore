@@ -1,6 +1,11 @@
 # Godot 4+ imported artifacts & cache
 .godot/
 
+# Reimport sidecars for raw evidence under docs/ (docs/ lives inside res://,
+# so Godot regenerates these on every import; no code loads docs/ as a resource)
+docs/**/*.import
+docs/**/*.translation
+
 # OS/editor cruft
 .DS_Store
 Thumbs.db
