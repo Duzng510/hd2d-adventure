@@ -11,6 +11,7 @@ combo_window_frames = 10
 light_combo_hits = 3
 light_damage = 10
 light_reach = 1.4
+player_move_speed = 4.0
 fatigue_free_swings = 3
 fatigue_step_frames = 4
 fatigue_max_frames = 12

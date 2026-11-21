@@ -1,4 +1,4 @@
-[gd_scene load_steps=37 format=3]
+[gd_scene load_steps=38 format=3]
 
 [ext_resource type="Script" path="res://scripts/phase_c/grove_arena.gd" id="1_arena"]
 [ext_resource type="Script" path="res://scripts/phase_a/player_controller.gd" id="2_player"]
@@ -17,6 +17,7 @@
 [ext_resource type="PackedScene" path="res://scenes/combat/ranged.tscn" id="15_ranged"]
 [ext_resource type="PackedScene" path="res://scenes/combat/boss.tscn" id="16_boss"]
 [ext_resource type="Script" path="res://scripts/phase_c/reward.gd" id="17_reward"]
+[ext_resource type="Script" path="res://scripts/ui/character_sheet.gd" id="18_sheet"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
 sky_top_color = Color(0.35, 0.45, 0.6, 1)
@@ -295,6 +296,9 @@ script = ExtResource("9_debughit")
 
 [node name="WaveHUD" type="CanvasLayer" parent="."]
 script = ExtResource("11_whud")
+
+[node name="CharacterSheet" type="CanvasLayer" parent="."]
+script = ExtResource("18_sheet")
 
 [node name="Reward" type="Node3D" parent="."]
 script = ExtResource("17_reward")

@@ -27,18 +27,18 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	var kernel := _encounter.kernel
-	var state_text := "ĐANG ĐÁNH"
-	var wave_text := "-"
+	var state_text := UiCopy.HUD_FIGHT
+	var wave_text := UiCopy.HUD_WAVE_NONE
 	if kernel.state != WaveKernel.State.INACTIVE:
-		wave_text = "%d/%d" % [kernel.wave_index + 1, kernel.wave_count()]
+		wave_text = UiCopy.HUD_WAVE_PROGRESS % [kernel.wave_index + 1, kernel.wave_count()]
 	match kernel.state:
 		WaveKernel.State.PAUSED:
-			state_text = "WAVE TIẾP THEO"
+			state_text = UiCopy.HUD_NEXT
 		WaveKernel.State.WON:
-			state_text = "THẮNG — R chơi lại"
+			state_text = UiCopy.HUD_WIN
 		WaveKernel.State.LOST:
-			state_text = "THUA — R chơi lại"
-	var line := "PLAYER %d/%d | WAVE %s | ENEMIES %d | %s" % [
+			state_text = UiCopy.HUD_LOSE
+	var line := UiCopy.HUD_ROW % [
 		_combat.health.hp, _combat.health.max_hp,
 		wave_text, _encounter.alive_count(), state_text,
 	]
@@ -46,9 +46,9 @@ func _process(_delta: float) -> void:
 	if boss_line != "":
 		line += "\n" + boss_line
 	if _reward != null and _reward.kernel.gate_open():
-		var reward_text := "CỔNG MỞ — SHRINE PHÍA BẮC"
+		var reward_text := UiCopy.HUD_GATE_OPEN
 		if _reward.kernel.state == RewardKernel.State.HEALED:
-			reward_text = "CỔNG MỞ — ĐÃ HỘI MÁU"
+			reward_text = UiCopy.HUD_GATE_HEALED
 		line += "\n" + reward_text
 	_label.text = line
 
@@ -58,5 +58,5 @@ func _boss_line() -> String:
 	for enemy in _encounter.enemies():
 		if enemy is Boss:
 			var boss := enemy as Boss
-			return "BOSS %d/%d | PHASE %d" % [boss.hp(), boss.health.max_hp, boss.phase_number()]
+			return UiCopy.HUD_BOSS_PHASE % [boss.hp(), boss.health.max_hp, boss.phase_number()]
 	return ""

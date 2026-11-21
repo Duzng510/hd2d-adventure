@@ -1,7 +1,8 @@
 class_name PlayerController
 extends CharacterBody3D
 
-@export var speed: float = 4.0
+## Pushed by PlayerCombat from PlayerStats (T-029); never owned by the scene.
+var speed: float = 4.0
 @export var visual_snap: bool = true
 @export var camera_path: NodePath = NodePath("../CameraRig")
 

@@ -13,7 +13,6 @@ const RUNS := 3
 const MAX_TICKS := 3600
 const BOSS_OFFSET := Vector3(0.0, 0.0, -1.0)
 const POLICIES := ["mash", "paced"]
-const TUNING_PATH := "res://scripts/combat/combat_tuning.tres"
 
 var _arena: Node3D
 var _player: PlayerController
@@ -31,12 +30,16 @@ var _fatigue_max := 0
 
 
 func _enter_tree() -> void:
-	# Runs before the arena subtree is ready, so the shared tuning resource can
-	# still be edited before PlayerCombat builds its TempoFatigue from it.
+	# Runs before the arena subtree is ready, so PlayerCombat still builds its
+	# PlayerStats/TempoFatigue from `tuning` in _ready. The negative control
+	# hands it a fresh resource (code defaults equal the .tres) rather than
+	# mutating the shared combat_tuning.tres.
 	_negative = OS.get_cmdline_user_args().has("negative")
 	if _negative:
-		var tuning: CombatTuning = load(TUNING_PATH)
-		tuning.fatigue_free_swings = 100000
+		var combat := get_node("GroveArena/Player/PlayerCombat") as PlayerCombat
+		var fresh := CombatTuning.new()
+		fresh.fatigue_free_swings = 100000
+		combat.tuning = fresh
 
 
 func _ready() -> void:
