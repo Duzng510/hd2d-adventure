@@ -96,7 +96,7 @@ Scene `scenes/phase_c/run_t032_tell.tscn`; run with `--quit-after` sized to the 
 ### Task 6: L3 capture (renderer mode, not `--headless`)
 
 `"…exe" --path . res://scenes/ui/capture_tempo_tell.tscn --fixed-fps 60 --quit-after 1`, 1280×720, box = 80 px around the player's feet (the T-026 ruler, reused so the two tasks measure the same thing):
-- `P32.L` level 0 vs 1, 1 vs 2, 2 vs 3: `band_diff ≥ 40 px` each step. Arithmetic from the geometry above: each slot paints 10–11 texels (computed on the 18-texel grid: 11 / 10 / 11), i.e. ≈160–176 screen px at 4 px/texel — headroom over the 40 px gate, so a result near the gate means the arc geometry is wrong, not that the tell is weak.
+- `P32.L` level 0 vs 1, 1 vs 2, 2 vs 3: `band_diff ≥ 40 px` each step. Measured on the grid (not predicted): the shipped arc paints **12 texels per tier** (cumulative 0/12/24/36, `test_self_marker_art` 11 checks green), i.e. ≈192 screen px at 4 px/texel — 4.8× the gate, so a result near 40 px means the arc geometry is wrong, not that the tell is weak.
 - `P32.C` control: same pose, same level, second capture → `0 px`.
 - `P32.S` lit-pixel check so an empty control cannot pass green (lesson P26.3).
 - `P32.O` boss body placed over the player at each level: the arc still changes pixels inside the box → the tell inherits `no_depth_test`, it is not silently occluded.

@@ -13,6 +13,9 @@ const PALETTE := {
 	"floor_b": Color8(112, 138, 96),
 	"grid": Color8(84, 104, 74),
 	"aim": Color8(255, 214, 90),
+	# T-032 tempo tell. Reserved so it can never steal an existing meaning:
+	# not telegraph orange, not the red hit flash, not the yellow reticle.
+	"tempo": Color8(150, 200, 235),
 }
 
 
@@ -88,10 +91,12 @@ static func _rect(img: Image, x: int, y: int, w: int, h: int, c: Color) -> void:
 			img.set_pixel(ix, iy, c)
 
 
-static func make_self_marker(diameter: float) -> ImageTexture:
+static func make_self_marker(diameter: float, level: int = 0, slots: int = 3) -> ImageTexture:
 	# Player footprint ring (T-026): a tall enemy body standing over the sprite
 	# must not be able to hide where the player is. Tunic green so it is never
 	# mistaken for a telegraph disc or the yellow aim reticle.
+	# T-032 adds the tempo tier as an inner arc; `slots` follows the tuning
+	# (cap / step) so the art does not hardcode how many tiers exist.
 	var size := _texel_count(diameter)
 	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
@@ -110,6 +115,21 @@ static func make_self_marker(diameter: float) -> ImageTexture:
 		var ty := int(round(center + sin(angle) * (radius - 1.0)))
 		if tx >= 0 and tx < size and ty >= 0 and ty < size:
 			img.set_pixel(tx, ty, edge)
+	# T-032: the paid tempo tier as a clockwise arc inside the band, starting at
+	# 12 o'clock. Level 0 paints nothing, so the ring stays the art T-026 measured.
+	if level > 0 and slots > 0:
+		var tell: Color = PALETTE.tempo
+		var span := TAU * clampi(level, 0, slots) / float(slots)
+		for y in size:
+			for x in size:
+				var d := Vector2(x - center, y - center).length()
+				# Expressed off the radius so the arc scales with the mesh: one
+				# texel of air below the 2-texel ring band, one texel thick.
+				if d < radius - 3.5 or d >= radius - 2.5:
+					continue
+				var theta := fposmod(atan2(float(x - center), -float(y - center)), TAU)
+				if theta < span:
+					img.set_pixel(x, y, tell)
 	return ImageTexture.create_from_image(img)
 
 
