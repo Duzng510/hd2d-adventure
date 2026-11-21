@@ -23,8 +23,12 @@ func _initialize() -> void:
 	_check(Hd2dTheme.TITLE_FONT_SIZE % 16 == 0, "title size is a multiple of the 16 px glyph cell")
 	_check(Hd2dTheme.SHEET_SIZE.x % 4 == 0 and Hd2dTheme.SHEET_SIZE.y % 4 == 0,
 		"sheet geometry sits on the 4 px grid")
+	_check(Hd2dTheme.SHEET_SIZE == Vector2i(480, 432),
+		"sheet geometry matches the approved 480x432 (buff rows)")
 	_check(Hd2dTheme.CARD_SIZE.x % 4 == 0 and Hd2dTheme.CARD_SIZE.y % 4 == 0,
 		"card geometry sits on the 4 px grid")
+	_check(Hd2dTheme.CARD_SIZE == Vector2i(160, 220),
+		"card geometry matches the approved 160x220")
 	var panel := theme.get_stylebox(&"panel", &"PanelContainer") as StyleBoxFlat
 	_check(panel != null and panel.bg_color == Hd2dTheme.PANEL, "panel stylebox uses the palette")
 	_check(Hd2dTheme.ACCENT == Color("#d9b26a"), "accent is the approved gold")

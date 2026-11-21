@@ -4,21 +4,26 @@ extends Node
 ## open pose must differ from the closed one inside the panel band only.
 ##   <GODOT> --path . res://scenes/ui/capture_sheet.tscn --fixed-fps 60
 ##   ... -- negative   same pose twice: control must report 0 px
+##
+## T-030: the band now contains the 480x432 panel, the open pose carries two
+## buffs, and P29.4 proves their gain/cost rows are inside the rendered panel.
 
 const EVIDENCE_DIR := "res://docs/phase-d/evidence/t029/"
-const PANEL_BAND := Rect2(0.30, 0.27, 0.40, 0.46)
+const PANEL_BAND := Rect2(0.30, 0.18, 0.40, 0.64)
 const PANEL_MIN_DIFF := 40
 const LIT_MIN_PIXELS := 500
 
 var _shots: Array = []
 var _checks := 0
 var _failures := 0
+var _sheet: CharacterSheet
 
 
 func _ready() -> void:
 	# The wave must not start: player spawn sits inside the trigger radius.
 	var arena := get_node("../GroveArena")
 	arena.get_node("WaveEncounter").set_physics_process(false)
+	_sheet = arena.get_node("CharacterSheet") as CharacterSheet
 	_capture.call_deferred()
 
 
@@ -29,6 +34,11 @@ func _capture() -> void:
 	if negative:
 		_shots.append(_grab("sheet_control"))
 	else:
+		# T-030: two buffs so the open pose really shows the name + gain/cost rows.
+		var combat := get_node("../GroveArena/Player/PlayerCombat") as PlayerCombat
+		for id in [&"heavy_edge", &"long_reach"]:
+			var entry: Dictionary = BuffPool.pool()[BuffPool.index_of(id)]
+			combat.stats.add_modifier(id, entry["ops"])
 		await _press_escape()
 		_shots.append(_grab("sheet_open"))
 	_report(negative)
@@ -100,6 +110,11 @@ func _report(negative: bool) -> void:
 		_check(diff >= PANEL_MIN_DIFF,
 			"P29.3 the sheet open/closed differs (%d px in the panel band, need >= %d)"
 			% [diff, PANEL_MIN_DIFF])
+		var body := _sheet.body_text() if _sheet != null else ""
+		_check(_sheet != null and _sheet.is_open()
+			and body.contains(UiCopy.BUFF_HEAVY_EDGE_GAIN)
+			and body.contains(UiCopy.BUFF_HEAVY_EDGE_COST),
+			"P29.4 the opened sheet renders a buff gain and its cost")
 	print("checks=%d failures=%d band_diff=%d lit=%s" % [_checks, _failures, diff, lit])
 	print("%s t029_sheet_capture%s" % ["PASS" if _failures == 0 else "FAIL",
 		" (control)" if negative else ""])

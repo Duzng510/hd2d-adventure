@@ -25,6 +25,9 @@ const SHEET_REACH_ROW := "%.1f m"
 const SHEET_COMBO_ROW := "%d đòn / cửa sổ %d tick"
 const SHEET_DODGE_ROW := "%.1f m/s · %d tick · i-frame %d"
 const SHEET_FATIGUE_ROW := "free %d · +%d tick · trần %d · decay %d"
+## T-030: the ESC sheet must explain each carried buff (spec §5 name + gain/cost),
+## not only its title.
+const SHEET_BUFF_LINE := "%s — LỢI: %s\nĐỔI LẠI: %s"
 const HUD_PLAYER := "PLAYER"
 const HUD_WAVE := "WAVE"
 const HUD_ENEMIES := "ENEMIES"
@@ -49,8 +52,9 @@ const BUFF_HEAVY_EDGE_COST := "HỒI ĐÒN +3 TICK"
 const BUFF_QUICK_RHYTHM := "NHỊP GỌN"
 ## The card text area is 144 px (160 card - 2 * 8 inset) = 22.5 glyphs at 16 px
 ## VT323 (6.4 px/glyph). A cost longer than that gets a deliberate line break
-## here instead of a mid-phrase wrap in the card.
-const BUFF_QUICK_RHYTHM_GAIN := "HỒI ĐÒN -3 · COMBO +4"
+## here instead of a mid-phrase wrap in the card. T-030 final review: both lines
+## carry the TICK unit (the old single line mixed units).
+const BUFF_QUICK_RHYTHM_GAIN := "HỒI ĐÒN -3 TICK\nCOMBO +4 TICK"
 const BUFF_QUICK_RHYTHM_COST := "SÁT THƯƠNG -10%\nMỆT SỚM"
 const BUFF_ROOT_ARMOR := "GIÁP RỄ"
 const BUFF_ROOT_ARMOR_GAIN := "MÁU TỐI ĐA +40"

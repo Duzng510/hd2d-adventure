@@ -14,8 +14,9 @@ var _encounter: WaveEncounter
 var _open := false
 
 var _panel: PanelContainer
+var _column: VBoxContainer
 var _rows: Dictionary = {}
-var _buffs: Label
+var _buff_list: VBoxContainer
 var _close: Button
 
 
@@ -97,33 +98,62 @@ func refresh() -> void:
 		_stats.fatigue_free_swings(), _stats.fatigue_step_frames(),
 		_stats.fatigue_max_frames(), _stats.fatigue_decay_frames()]
 	_rows[&"wave"].text = UiCopy.SHEET_PLACEHOLDER
-	if _encounter != null and _encounter.kernel != null:
+	if _encounter != null and _encounter.kernel != null \
+			and _encounter.kernel.state != WaveKernel.State.INACTIVE:
 		_rows[&"wave"].text = UiCopy.HUD_WAVE_PROGRESS % [
 			_encounter.kernel.wave_index + 1, _encounter.kernel.wave_count()]
 	_rows[&"seed"].text = UiCopy.SHEET_PLACEHOLDER
 	if _encounter != null:
 		_rows[&"seed"].text = str(_encounter.buff_seed())
+	_refresh_buffs()
+
+
+## T-030: each carried buff gets name + gain/cost rows (spec §5), sourced from
+## the pool entry so the sheet cannot drift from the card copy. Old labels are
+## freed immediately, not queue_free()d, so body_text() never reads a stale row.
+func _refresh_buffs() -> void:
+	for label in _buff_list.get_children():
+		_buff_list.remove_child(label)
+		label.free()
 	var mods := _stats.active_modifiers()
 	if mods.is_empty():
-		_buffs.text = UiCopy.SHEET_NONE
-	else:
-		var titles := {}
-		for entry in BuffPool.pool():
-			titles[entry["id"]] = entry["title"]
-		var names: Array[String] = []
-		for entry in mods:
-			var source: StringName = entry["source"]
-			names.append(str(titles.get(source, str(source))))
-		_buffs.text = ", ".join(names)
+		_add_buff_line(UiCopy.SHEET_NONE)
+		return
+	var entries := {}
+	for entry in BuffPool.pool():
+		entries[entry["id"]] = entry
+	for mod in mods:
+		var source: StringName = mod["source"]
+		var buff: Dictionary = entries.get(source, {})
+		if buff.is_empty():
+			_add_buff_line(str(source))
+			continue
+		_add_buff_line(UiCopy.SHEET_BUFF_LINE % [
+			buff["title"],
+			str(buff["gain"]).replace("\n", " · "),
+			str(buff["cost"]).replace("\n", " · ")])
+
+
+func _add_buff_line(text: String) -> void:
+	var label := Label.new()
+	label.text = text
+	_buff_list.add_child(label)
 
 
 func body_text() -> String:
 	var parts: Array[String] = []
 	for value in _rows.values():
 		parts.append((value as Label).text)
-	if _buffs != null:
-		parts.append(_buffs.text)
+	for label in _buff_list.get_children():
+		parts.append((label as Label).text)
 	return "\n".join(parts)
+
+
+## Geometry truth gate: the panel must never have to grow past SHEET_SIZE, or the
+## buff rows would leave the 4 px grid / overlap the arena framing.
+func content_minimum_size() -> Vector2:
+	return _column.get_combined_minimum_size() \
+		+ Vector2(Hd2dTheme.GAP * 2, Hd2dTheme.GAP * 2)
 
 
 func _current_hp() -> int:
@@ -163,6 +193,7 @@ func _build_ui() -> void:
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override(&"separation", Hd2dTheme.GAP / 2)
 	_panel.add_child(column)
+	_column = column
 
 	var title := Label.new()
 	title.text = UiCopy.SHEET_TITLE
@@ -188,9 +219,10 @@ func _build_ui() -> void:
 	buff_title.text = UiCopy.SHEET_BUFFS
 	buff_title.add_theme_color_override(&"font_color", Hd2dTheme.ACCENT)
 	column.add_child(buff_title)
-	_buffs = Label.new()
-	_buffs.text = UiCopy.SHEET_NONE
-	column.add_child(_buffs)
+	_buff_list = VBoxContainer.new()
+	_buff_list.add_theme_constant_override(&"separation", Hd2dTheme.GAP / 2)
+	column.add_child(_buff_list)
+	_add_buff_line(UiCopy.SHEET_NONE)
 
 	_close = Button.new()
 	_close.text = UiCopy.SHEET_CLOSE
