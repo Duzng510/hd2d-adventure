@@ -24,6 +24,34 @@ func _run() -> void:
 	_check(not paused and not sheet.visible,
 		"the sheet starts closed and the game keeps running")
 
+	# T-031: the readout toggle is an information toggle (spec §5) — the sheet owns
+	# the button, the layer owns the state, so the sheet must never cache it.
+	var numbers := DamageNumbers.new()
+	root.add_child(numbers)
+	await process_frame
+	sheet.set_damage_numbers(numbers)
+	_check(not sheet.is_open() and numbers.is_enabled(),
+		"the numbers layer starts enabled and the sheet stays closed")
+	sheet.open()
+	_check(sheet.toggle_value_text().contains(UiCopy.STATE_ON),
+		"the sheet states the current toggle value")
+	sheet.toggle_numbers()
+	_check(not numbers.is_enabled() and numbers.active_count() == 0,
+		"the sheet toggle really turns the readout off")
+	_check(sheet.toggle_value_text().contains(UiCopy.STATE_OFF),
+		"the label flips with the state")
+	sheet.close()
+	sheet.open()
+	_check(not numbers.is_enabled() and sheet.toggle_value_text().contains(UiCopy.STATE_OFF),
+		"the choice survives a close/reopen (session variable, not a save)")
+	numbers.set_enabled(true)
+	_check(sheet.toggle_value_text().contains(UiCopy.STATE_ON),
+		"the sheet reads the state back from the layer, it does not cache it")
+	sheet.close()
+	numbers.queue_free()
+	sheet.set_damage_numbers(null)
+	await process_frame
+
 	sheet.open()
 	_check(paused == (not _negative), "opening pauses the world")
 	_check(sheet.body_text().contains("77/100"), "hp row reads current and effective max")
@@ -55,7 +83,21 @@ func _run() -> void:
 	print("SHEET content_minimum_size=%s sheet_size=%s"
 		% [minimum, Vector2(Hd2dTheme.SHEET_SIZE)])
 	_check(minimum.x <= Hd2dTheme.SHEET_SIZE.x and minimum.y <= Hd2dTheme.SHEET_SIZE.y,
-		"the two buff rows fit the sheet geometry (min %s)" % minimum)
+		"the toggle row and the two buff rows fit the sheet geometry (min %s)" % minimum)
+	# T-030 debt: a sheet asked for its body before _ready must not crash.
+	var cold := CharacterSheet.new()
+	_check(cold.body_text() == "", "body_text before _ready returns empty, not an error")
+	_check(cold.content_minimum_size() == Vector2(Hd2dTheme.SHEET_SIZE),
+		"content_minimum_size before _ready falls back to the panel size")
+	cold.free()
+	# T-031: "1/3" alone did not say whether the wave was fighting, parked for a
+	# pick, or over (spec §5).
+	_check(CharacterSheet.wave_state_text(WaveKernel.State.BUFF_PENDING)
+		== UiCopy.BUFF_PANEL_TITLE, "a parked wave says a pick is owed")
+	_check(CharacterSheet.wave_state_text(WaveKernel.State.FIGHTING) == UiCopy.HUD_FIGHT,
+		"a live wave says fighting")
+	_check(CharacterSheet.wave_state_text(WaveKernel.State.WON) == UiCopy.HUD_WIN,
+		"a finished wave reads as the win line")
 	stats.clear_modifiers()
 	sheet.refresh()
 	_check(sheet.body_text().contains(UiCopy.SHEET_NONE),

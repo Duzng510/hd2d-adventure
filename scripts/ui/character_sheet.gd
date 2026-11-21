@@ -7,16 +7,19 @@ extends CanvasLayer
 
 @export var combat_path: NodePath = NodePath("../Player/PlayerCombat")
 @export var encounter_path: NodePath = NodePath("../WaveEncounter")
+@export var damage_numbers_path: NodePath = NodePath("../DamageNumbers")
 
 var _stats: PlayerStats
 var _hp_source: Callable = Callable()
 var _encounter: WaveEncounter
+var _numbers: DamageNumbers
 var _open := false
 
 var _panel: PanelContainer
 var _column: VBoxContainer
 var _rows: Dictionary = {}
 var _buff_list: VBoxContainer
+var _toggle: Button
 var _close: Button
 
 
@@ -55,6 +58,35 @@ func is_open() -> bool:
 	return _open
 
 
+func set_damage_numbers(numbers: DamageNumbers) -> void:
+	if _numbers != null and _numbers.enabled_changed.is_connected(_refresh_toggle):
+		_numbers.enabled_changed.disconnect(_refresh_toggle)
+	_numbers = numbers
+	if _numbers != null and not _numbers.enabled_changed.is_connected(_refresh_toggle):
+		_numbers.enabled_changed.connect(_refresh_toggle)
+	_refresh_toggle()
+
+
+## The state lives on the layer, so the sheet never has to remember it.
+func toggle_numbers() -> void:
+	if _numbers == null:
+		return
+	_numbers.set_enabled(not _numbers.is_enabled())
+	_refresh_toggle()
+
+
+func toggle_value_text() -> String:
+	return "" if _toggle == null else _toggle.text
+
+
+func _refresh_toggle() -> void:
+	if _toggle == null:
+		return
+	var on := _numbers != null and _numbers.is_enabled()
+	_toggle.text = UiCopy.SHEET_TOGGLE % [UiCopy.STATE_ON if on else UiCopy.STATE_OFF]
+	_toggle.disabled = _numbers == null
+
+
 func open() -> void:
 	if _open:
 		return
@@ -65,6 +97,7 @@ func open() -> void:
 	_open = true
 	visible = true
 	refresh()
+	_refresh_toggle()
 	get_tree().paused = true
 	if _close != null:
 		_close.grab_focus()
@@ -100,12 +133,29 @@ func refresh() -> void:
 	_rows[&"wave"].text = UiCopy.SHEET_PLACEHOLDER
 	if _encounter != null and _encounter.kernel != null \
 			and _encounter.kernel.state != WaveKernel.State.INACTIVE:
-		_rows[&"wave"].text = UiCopy.HUD_WAVE_PROGRESS % [
-			_encounter.kernel.wave_index + 1, _encounter.kernel.wave_count()]
+		_rows[&"wave"].text = UiCopy.SHEET_WAVE_ROW % [
+			_encounter.kernel.wave_index + 1, _encounter.kernel.wave_count(),
+			wave_state_text(_encounter.kernel.state)]
 	_rows[&"seed"].text = UiCopy.SHEET_PLACEHOLDER
 	if _encounter != null:
 		_rows[&"seed"].text = str(_encounter.buff_seed())
 	_refresh_buffs()
+
+
+## The wave row has to say which of the three waiting states the player is in,
+## and the HUD uses the same wording, so the mapping lives here as pure copy
+## lookup rather than a second match a future state could miss.
+static func wave_state_text(state: int) -> String:
+	match state:
+		WaveKernel.State.BUFF_PENDING:
+			return UiCopy.BUFF_PANEL_TITLE
+		WaveKernel.State.PAUSED:
+			return UiCopy.HUD_NEXT
+		WaveKernel.State.WON:
+			return UiCopy.HUD_WIN
+		WaveKernel.State.LOST:
+			return UiCopy.HUD_LOSE
+	return UiCopy.HUD_FIGHT
 
 
 ## T-030: each carried buff gets name + gain/cost rows (spec §5), sourced from
@@ -141,6 +191,8 @@ func _add_buff_line(text: String) -> void:
 
 
 func body_text() -> String:
+	if _rows.is_empty():
+		return ""
 	var parts: Array[String] = []
 	for value in _rows.values():
 		parts.append((value as Label).text)
@@ -152,6 +204,8 @@ func body_text() -> String:
 ## Geometry truth gate: the panel must never have to grow past SHEET_SIZE, or the
 ## buff rows would leave the 4 px grid / overlap the arena framing.
 func content_minimum_size() -> Vector2:
+	if _column == null:
+		return Vector2(Hd2dTheme.SHEET_SIZE)
 	return _column.get_combined_minimum_size() \
 		+ Vector2(Hd2dTheme.GAP * 2, Hd2dTheme.GAP * 2)
 
@@ -163,6 +217,8 @@ func _current_hp() -> int:
 
 
 func _resolve_sources() -> void:
+	# The panel is built before sources resolve, so the toggle row already exists.
+	set_damage_numbers(get_node_or_null(damage_numbers_path) as DamageNumbers)
 	var combat := get_node_or_null(combat_path) as PlayerCombat
 	if combat == null or combat.stats == null:
 		return
@@ -223,6 +279,11 @@ func _build_ui() -> void:
 	_buff_list.add_theme_constant_override(&"separation", Hd2dTheme.GAP / 2)
 	column.add_child(_buff_list)
 	_add_buff_line(UiCopy.SHEET_NONE)
+
+	_toggle = Button.new()
+	_toggle.pressed.connect(toggle_numbers)
+	column.add_child(_toggle)
+	_refresh_toggle()
 
 	_close = Button.new()
 	_close.text = UiCopy.SHEET_CLOSE

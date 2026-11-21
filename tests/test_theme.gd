@@ -23,8 +23,8 @@ func _initialize() -> void:
 	_check(Hd2dTheme.TITLE_FONT_SIZE % 16 == 0, "title size is a multiple of the 16 px glyph cell")
 	_check(Hd2dTheme.SHEET_SIZE.x % 4 == 0 and Hd2dTheme.SHEET_SIZE.y % 4 == 0,
 		"sheet geometry sits on the 4 px grid")
-	_check(Hd2dTheme.SHEET_SIZE == Vector2i(480, 432),
-		"sheet geometry matches the approved 480x432 (buff rows)")
+	_check(Hd2dTheme.SHEET_SIZE == Vector2i(480, 448),
+		"sheet geometry matches the approved 480x448 (buff rows + the T-031 toggle)")
 	_check(Hd2dTheme.CARD_SIZE.x % 4 == 0 and Hd2dTheme.CARD_SIZE.y % 4 == 0,
 		"card geometry sits on the 4 px grid")
 	_check(Hd2dTheme.CARD_SIZE == Vector2i(160, 220),
@@ -33,6 +33,14 @@ func _initialize() -> void:
 	_check(panel != null and panel.bg_color == Hd2dTheme.PANEL, "panel stylebox uses the palette")
 	_check(Hd2dTheme.ACCENT == Color("#d9b26a"), "accent is the approved gold")
 	_check(Hd2dTheme.COST != Color("#d94a4a"), "cost red stays distinct from telegraph red")
+	# T-031: the numbers are UI too, so their style lives in the theme, not in the
+	# node that draws them.
+	_check(Hd2dTheme.DAMAGE_FONT_SIZE % 16 == 0,
+		"damage number size stays a multiple of the 16 px glyph cell")
+	_check(Hd2dTheme.DAMAGE == Color("#ffffff"), "damage numbers use the approved white")
+	_check(Hd2dTheme.DAMAGE_OUTLINE_PX >= 2 and Hd2dTheme.DAMAGE_OUTLINE_PX <= 4,
+		"the damage outline stays inside the HUD outline range")
+	_check(Hd2dTheme.DAMAGE_OUTLINE != Hd2dTheme.TEXT, "the outline stays distinct from body text")
 	if _failures == 0:
 		print("PASS test_theme: %d checks" % _checks)
 		quit(0)
