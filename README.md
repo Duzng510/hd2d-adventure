@@ -30,11 +30,11 @@ Requires [Godot 4.7.2](https://godotengine.org/download/archive/) (Forward+ rend
 
 ```bat
 run.bat              " the game (title screen is the main scene)
-run_arena.bat        " the Phase C arena directly, skipping the menu
+run_arena.bat        " the Phase C arena with the L4 probe rig mounted
 run.bat res://scenes/phase_a/phase_a_playground.tscn   " any other scene
 ```
 
-Both wrappers call the engine with `--path .` and `--resolution 1280x720`, so no editor needs to be open. Point `GODOT_EXE` inside the two `.bat` files at your own engine binary. On Windows, `Ctrl+Shift+B` runs the `godot: run game` task from `.vscode/tasks.json`.
+Both wrappers call the engine with `--path .` and `--resolution 1280x720`, so no editor needs to be open; `run_arena.bat` loads `play_arena.tscn`, which wraps the arena in the capture rig and writes a probe CSV plus a PNG at each death. Point `GODOT_EXE` inside the two `.bat` files at your own engine binary. On Windows, `Ctrl+Shift+B` runs the `godot: run game` task from `.vscode/tasks.json`.
 
 ### Controls
 
