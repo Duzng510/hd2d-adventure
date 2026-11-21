@@ -60,7 +60,7 @@ Thứ tự tính cho số nguyên: `floor((base + Σ add) × Π mult)`; số fra
 
 1. `combat_tuning.tres` = **base duy nhất** cho mọi số feel; không modifier nào ghi ngược vào `.tres`.
 2. Runtime **chỉ** đọc qua `PlayerStats`; cấm đọc trực tiếp `tuning.light_damage / player_max_hp / player_move_speed / light_startup_frames / light_active_frames / light_recovery_frames / light_combo_hits / combo_window_frames / fatigue_* / dodge_* / light_reach` ngoài `player_stats.gd`. Máy kiểm: `tools/check_stat_source.mjs` (§8).
-3. `CombatTuning` thêm **`player_move_speed := 4.0`** — hiện tốc độ chạy là `@export` trên `player_controller.gd:4`; chuyển về tuning để stats là nguồn duy nhất (giá trị giữ 4.0, hành vi không đổi). Controller đọc `stats.move_speed()`; nếu scene override `speed` thì đó là vi phạm luật (check máy quét `speed =` trên scene player).
+3. `CombatTuning` thêm **`player_move_speed := 4.0`** — hiện tốc độ chạy là `@export` trên `player_controller.gd:4`; chuyển về tuning để stats là nguồn duy nhất (giá trị giữ 4.0, hành vi không đổi). `PlayerCombat` nhận giá trị đã tính từ `PlayerStats` rồi đẩy vào `player_controller.speed` (§3.3); controller **không** đọc `stats.move_speed()` — một đường đọc duy nhất qua `PlayerStats`. Nếu scene override `speed` thì đó là vi phạm luật (check máy quét `speed =` trên scene player).
 
 ### 3.3. Điểm nối (integration points)
 
