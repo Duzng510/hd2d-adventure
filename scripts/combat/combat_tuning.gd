@@ -12,6 +12,9 @@ extends Resource
 @export var light_damage: int = 10
 @export var light_reach: float = 1.4
 
+@export_group("Player movement")
+@export var player_move_speed: float = 4.0
+
 @export_group("Attack tempo (T-027, player only)")
 @export var fatigue_free_swings: int = 3
 @export var fatigue_step_frames: int = 4
