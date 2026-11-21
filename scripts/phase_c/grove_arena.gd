@@ -17,10 +17,18 @@ const SELF_MARKER_PRIORITY := 10
 ## OcclusionFader collects once at load). A depth-free ring under the feet keeps
 ## "where am I" answerable without ghosting the thing the player must read.
 @export var show_self_marker := true
+## T-032: the paid tempo tier drawn on that same ring (D-019 risk 3 - the cost
+## existed but nothing showed it). Off means the ring is exactly the T-026 art.
+@export var show_tempo_tell := true
 
 @onready var _floor_mesh: MeshInstance3D = $Floor/MeshInstance3D
 @onready var _player_sprite: Sprite3D = $Player/Sprite3D
 @onready var _player_telegraph: MeshInstance3D = $Player/Telegraph
+
+## T-032: the ring material whose texture is swapped per tier, and the one tier
+## of art per paid step (index 0 is the plain T-026 ring).
+var _marker_material: StandardMaterial3D
+var _tell_textures: Array[ImageTexture] = []
 
 
 func _ready() -> void:
@@ -60,10 +68,11 @@ func _add_self_marker() -> void:
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	material.albedo_texture = PlaceholderTextures.make_self_marker(SELF_MARKER_DIAMETER)
 	material.no_depth_test = true
 	material.render_priority = SELF_MARKER_PRIORITY
 	quad.material = material
+	_marker_material = material
+	_build_tell_textures()
 	var marker := MeshInstance3D.new()
 	marker.name = &"SelfMarker"
 	marker.mesh = quad
@@ -72,3 +81,26 @@ func _add_self_marker() -> void:
 	marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	marker.visible = show_self_marker
 	$Player.add_child(marker)
+
+
+## The ring carries the tempo tier too, so the art variants are built once here
+## and the runtime path only swaps which texture the material already owns.
+func _build_tell_textures() -> void:
+	_tell_textures = [PlaceholderTextures.make_self_marker(SELF_MARKER_DIAMETER)]
+	if not show_tempo_tell:
+		return
+	var combat := $Player/PlayerCombat as PlayerCombat
+	var slots := combat.fatigue_level_max()
+	for level in range(1, slots + 1):
+		_tell_textures.append(
+			PlaceholderTextures.make_self_marker(SELF_MARKER_DIAMETER, level, slots)
+		)
+	_marker_material.albedo_texture = _tell_textures[clampi(combat.fatigue_level(), 0, slots)]
+	combat.fatigue_level_changed.connect(_on_fatigue_level_changed)
+
+
+func _on_fatigue_level_changed(level: int) -> void:
+	if _tell_textures.is_empty():
+		return
+	# Clamped in the view so a tuning change can never index past the built art.
+	_marker_material.albedo_texture = _tell_textures[clampi(level, 0, _tell_textures.size() - 1)]

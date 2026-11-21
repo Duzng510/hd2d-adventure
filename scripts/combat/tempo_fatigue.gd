@@ -27,6 +27,19 @@ func frames() -> int:
 	return mini(maxi(0, _chain - free_swings) * step_frames, max_frames)
 
 
+## The paid tier a tell should draw, floored from the frames actually charged.
+## Derived from frames() and never from _chain, so a display can only ever lag
+## the cost - it cannot promise a penalty the mechanic has not applied.
+func level() -> int:
+	return frames() / step_frames
+
+
+## Highest tier reachable under the current tuning. The view sizes itself to
+## this instead of hardcoding a slot count.
+func level_max() -> int:
+	return max_frames / step_frames
+
+
 func swing() -> void:
 	_chain += 1
 	_idle_ticks = 0

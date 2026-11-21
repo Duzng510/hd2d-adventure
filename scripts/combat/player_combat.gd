@@ -5,6 +5,10 @@ extends Node
 ## Runs at priority -10 so movement lock/override reach PlayerController the same tick.
 
 const ENEMY_HURTBOX_MASK := 32
+
+## Emitted when the paid tempo tier changes, never every frame (T-032). Views
+## read `fatigue_level()` on connect and then follow this signal.
+signal fatigue_level_changed(level: int)
 ## Authored SwingArc box length (scenes draw a 1.4 m BoxMesh at x=0.7).
 ## Reach scales are expressed against this so the default is a no-op.
 const SWING_BASE_LENGTH := 1.4
@@ -48,6 +52,7 @@ var _dodge_dir := Vector3.RIGHT
 var _was_active: bool = false
 var _hit_flash_frames: int = 0
 var _logged_death: bool = false
+var _tell_level: int = 0
 
 
 func _ready() -> void:
@@ -93,6 +98,9 @@ func _ready() -> void:
 
 func _physics_process(_delta: float) -> void:
 	_tick_hit_flash()
+	# Before the early returns: death, hit-freeze and a running dodge all change
+	# the tier, and a tell that stopped updating on those frames would lie.
+	_refresh_tempo_tell()
 	if health.is_dead():
 		if not _logged_death:
 			_logged_death = true
@@ -315,6 +323,24 @@ func dodge_available() -> bool:
 ## Extra recovery frames the next swing would pay (T-027). Read-only.
 func fatigue_frames() -> int:
 	return _tempo.frames()
+
+
+## Paid tier and the number of tiers the ceiling can reach (T-032). Read-only:
+## the view draws these, it never re-derives the cost.
+func fatigue_level() -> int:
+	return _tempo.level()
+
+
+func fatigue_level_max() -> int:
+	return _tempo.level_max()
+
+
+func _refresh_tempo_tell() -> void:
+	var level := _tempo.level()
+	if level == _tell_level:
+		return
+	_tell_level = level
+	fatigue_level_changed.emit(level)
 
 
 func is_attacking() -> bool:
