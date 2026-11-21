@@ -27,14 +27,21 @@ func _run() -> void:
 	var combat := arena.get_node("Player/PlayerCombat") as PlayerCombat
 	var shape_node := combat.get_node("../AttackHitbox/CollisionShape3D") as CollisionShape3D
 	var box := shape_node.shape as BoxShape3D
+	var arc := combat.get_node("../AttackHitbox/SwingArc") as MeshInstance3D
 	_check(is_equal_approx(box.size.x, 1.4) and is_equal_approx(shape_node.position.x, 0.7)
 			and is_equal_approx(box.size.y, 0.8) and is_equal_approx(box.size.z, 0.8),
 		"default reach is geometry-identical (1.4x0.8x0.8 box at x=0.7)")
+	_check(is_equal_approx(arc.position.x, 0.7) and is_equal_approx(arc.scale.x, 1.0),
+		"default reach keeps the authored SwingArc (x=%.2f scale=%.4f)"
+		% [arc.position.x, arc.scale.x])
 
 	combat.stats.add_modifier(&"probe", {&"light_reach_add": 0.4})
 	_check(is_equal_approx(box.size.x, 1.8) and is_equal_approx(shape_node.position.x, 0.9),
 		"reach_add resizes the real BoxShape3D (size.x=%.2f at x=%.2f)"
 		% [box.size.x, shape_node.position.x])
+	_check(is_equal_approx(arc.position.x, 0.9) and is_equal_approx(arc.scale.x, 1.8 / 1.4),
+		"reach_add stretches the SwingArc with the hitbox (x=%.2f scale=%.4f)"
+		% [arc.position.x, arc.scale.x])
 	_check(is_equal_approx(box.size.y, 0.8) and is_equal_approx(box.size.z, 0.8)
 			and is_equal_approx(shape_node.position.y, 0.8)
 			and is_equal_approx(shape_node.position.z, 0.0),
@@ -43,6 +50,8 @@ func _run() -> void:
 	await physics_frame
 	_check(is_equal_approx(box.size.x, 1.4) and is_equal_approx(shape_node.position.x, 0.7),
 		"removing the reach buff restores the authored hitbox")
+	_check(is_equal_approx(arc.position.x, 0.7) and is_equal_approx(arc.scale.x, 1.0),
+		"removing the reach buff restores the authored SwingArc")
 
 	# Two extra free swings, applied after _ready built the live TempoFatigue.
 	combat.stats.add_modifier(&"slow_breath", {&"fatigue_free_swings_add": 2.0})

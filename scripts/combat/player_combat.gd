@@ -5,6 +5,9 @@ extends Node
 ## Runs at priority -10 so movement lock/override reach PlayerController the same tick.
 
 const ENEMY_HURTBOX_MASK := 32
+## Authored SwingArc box length (scenes draw a 1.4 m BoxMesh at x=0.7).
+## Reach scales are expressed against this so the default is a no-op.
+const SWING_BASE_LENGTH := 1.4
 
 @export var tuning: CombatTuning
 @export var director_path: NodePath = NodePath("../../CombatDirector")
@@ -332,6 +335,11 @@ func _apply_stats() -> void:
 	_sync_tempo()
 	_sync_dodge()
 	_apply_hitbox_reach()
+	# The swing visual is the same reach claim, so stretch it in lockstep.
+	if _swing != null:
+		var reach := stats.light_reach()
+		_swing.position.x = reach * 0.5
+		_swing.scale.x = reach / SWING_BASE_LENGTH
 
 
 func _sync_tempo() -> void:

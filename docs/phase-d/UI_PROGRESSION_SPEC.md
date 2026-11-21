@@ -54,7 +54,7 @@ func clear_modifiers() -> void
 func active_modifiers() -> Array[Dictionary]  # cho sheet: [{source, ops}]
 ```
 
-Thứ tự tính cho số nguyên: `floor((base + Σ add) × Π mult)`; số frame kẹp ≥1. `add_modifier` với cùng `source` thay thế modifier cũ (idempotent). Khóa op là **đúng tên getter + hậu tố `_add` / `_mult`** (`light_reach_add`, `player_move_speed_mult`, `fatigue_free_swings_add`, …); `PlayerStats._value()` không hiểu khóa lạ và bỏ qua im lặng, nên mọi op trong pool phải dùng đúng tên getter.
+Thứ tự tính cho số nguyên: `floor((base + Σ add) × Π mult)`; số frame kẹp ≥1. `add_modifier` với cùng `source` thay thế modifier cũ (idempotent). Khóa op là **khóa stat của kernel + hậu tố `_add` / `_mult`**: đúng tên getter, riêng `move_speed()` dùng khóa `player_move_speed` (`player_move_speed_mult`), các getter còn lại giữ nguyên tên (`light_reach_add`, `fatigue_free_swings_add`, …); `PlayerStats._value()` không hiểu khóa lạ và bỏ qua im lặng, nên mọi op trong pool phải dùng đúng khóa stat.
 
 ### 3.2. Luật ưu tiên (chống nguồn sự thật thứ hai)
 
@@ -141,8 +141,8 @@ player_died(): FIGHTING/PAUSED -> LOST (BUFF_PENDING không thể, world paused)
 - **Theme dựng bằng code:** `scripts/ui/hd2d_theme.gd` — `static func build() -> Theme`; StyleBox 9-slice sinh bằng code theo texel (cùng trường phái `PlaceholderTextures`), áp làm `theme` của UI root để mọi panel kế thừa. Không asset khung tải về.
 - **Palette:** panel `#12161c`, viền `#2c3542`, focus/tiêu đề `#d9b26a`, chữ `#e8e4da`, số sát thương `#ffffff`, phần "đổi lại" của buff `#c0695a` (không dùng đỏ telegraph địch).
 - **Font:** VT323 (Peter Hull, SIL OFL 1.1) tại `assets/ui/fonts/vt323.ttf` (toàn văn license `OFL-VT323.txt` cùng thư mục), ghi `assets/ASSET_LOG.md` (nguồn, ngày, license, sha256). Antialiasing/hinting/subpixel đặt tắt trong `Hd2dTheme.build()`. Cỡ chữ = **bội số nguyên của 16 px** (16 body / 32 title) — 16 px là lưới terminal 8×16 gốc của font, nên không resample; đơn vị đúng là chiều cao cell của font, không phải texel world.
-- **Coverage tiếng Việt:** m5x7 đã bị loại (cmap thiếu 17 glyph copy cần — `Ơ ơ Ư Ạ ạ Ầ Ậ Ắ Ế Ệ Ị Ổ Ộ Ớ Ở Ỳ` và em dash), VT323 phủ 567 codepoint và qua gate. Gate bắt buộc: `tests/test_font_coverage.gd` assert `font.has_char()` với **toàn bộ** ký tự UI copy (hiện 79 glyph, 0 missing); negative control với ký tự ngoài bảng mã phải đỏ. Nếu fail: hoặc copy UI rút về Latin (chấp nhận mất dấu), hoặc thêm fallback font (ghi DECISIONS) — **không** tự đổi font im lặng.
-- **Hình học:** panel 480×320, card 160×220, spacing 8/16 (chia hết 4); vị trí/tọa độ integer px; outline 2–4 px như HUD hiện tại.
+- **Coverage tiếng Việt:** m5x7 đã bị loại (cmap thiếu 17 glyph copy cần — `Ơ ơ Ư Ạ ạ Ầ Ậ Ắ Ế Ệ Ị Ổ Ộ Ớ Ở Ỳ` và em dash), VT323 phủ 567 codepoint và qua gate. Gate bắt buộc: `tests/test_font_coverage.gd` assert `font.has_char()` với **toàn bộ** ký tự UI copy (hiện 99 glyph, 0 missing); negative control với ký tự ngoài bảng mã phải đỏ. Nếu fail: hoặc copy UI rút về Latin (chấp nhận mất dấu), hoặc thêm fallback font (ghi DECISIONS) — **không** tự đổi font im lặng.
+- **Hình học:** panel 480×432, card 160×220, spacing 8/16 (chia hết 4); vị trí/tọa độ integer px; outline 2–4 px như HUD hiện tại. Hộp sheet lớn lên theo nội dung và luôn nằm trên lưới 4 px (T-030 thêm hai hàng wave/seed + khối buff "tên + lợi/hại" 2 dòng/món).
 - **Motion:** card stagger 0.05 s, fade+scale 0.12 s EASE_OUT; số sát thương 0.55 s. Không shake/flash toàn màn hình.
 
 ## 8. Gates (DG1–DG5) & bằng chứng
@@ -151,7 +151,7 @@ player_died(): FIGHTING/PAUSED -> LOST (BUFF_PENDING không thể, world paused)
 |---|---|---|
 | **DG1** | L1 `--check-only` mọi script mới + `--import` exit 0 | Godot |
 | **DG2** | Unit headless: `test_player_stats` (precedence, thứ tự add-then-mult, floor, clear, HP delta), `test_buff_kernel` (seed tái lập, không trùng, đúng 3, mỗi món 1 lần), `test_wave_kernel` mở rộng (flag false == hành vi cũ; flag true không tự advance; reset xoá pending), `test_font_coverage`, `test_buff_laws` (decay<cap sau mọi tổ hợp) | `-s res://tests/...` exit 0 |
-| **DG3** | Negative controls đỏ **đúng id**, exit 1: không apply buff ⇒ dmg/s < ngưỡng; thiếu `resolve_pick` ⇒ `wins=0`; bỏ `clear_modifiers` ⇒ buff còn sau R. Fail-first fixtures có tên: `buffs-not-reset-on-r`, `stat-source-violation` | harness |
+| **DG3** | Negative controls đỏ **đúng id**, exit 1: thiếu `resolve_pick` ⇒ T30.5 (stall fixture ở driver); bỏ `clear_modifiers` ⇒ T30.6 (`dirty-reset` fixture, tên `buffs-not-reset-on-r`); `stat-source-violation` ⇒ `check_stat_source.mjs --selftest`. Clause "không apply buff ⇒ dmg/s < ngưỡng" **AMENDED by D-026** (harness teleport + top HP không đo balance; gate hành vi = T30.1 `picks==20` + flow assertions). | harness |
 | **DG4** | L3 renderer thật: sheet/3 card/damage number — box-diff ≥40 px vs control cùng pose, ảnh có pixel sáng, **overlap số↔telegraph = 0 px**; ảnh phải được xem thật | `capture_t030_ui.tscn` |
 | **DG5** | Harness flow `run_t030_buffs.tscn`: 10 run seed cố định, `picks=2/run`, `wins=10`, in **dmg/s sau buff** để so với 4,8 (D-018) | exit 0 |
 
