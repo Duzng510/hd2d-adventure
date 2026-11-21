@@ -1,0 +1,15 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/phase_c/grove_arena.tscn" id="1_arena"]
+[ext_resource type="Script" path="res://scripts/ui/buff_choice.gd" id="2_buffs"]
+[ext_resource type="Script" path="res://scripts/ui/capture_buffs.gd" id="3_drv"]
+
+[node name="CaptureBuffs" type="Node"]
+
+[node name="GroveArena" parent="." instance=ExtResource("1_arena")]
+
+[node name="BuffChoice" type="CanvasLayer" parent="."]
+script = ExtResource("2_buffs")
+
+[node name="CaptureBuffsDriver" type="Node" parent="."]
+script = ExtResource("3_drv")

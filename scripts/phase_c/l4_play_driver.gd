@@ -50,6 +50,11 @@ func _ready() -> void:
 	_probe.capture_death_shots = DisplayServer.get_name() != "headless"
 	arena.add_child(_probe)
 	_director.event_logged.connect(_observe)
+	# T-030 bot runs must never park on the chooser: the wave-clear pick is taken
+	# on the spot. Passive/normal play keeps UI mode (auto_pick stays false).
+	var choice := get_node_or_null("../BuffChoice") as BuffChoice
+	if choice != null and _auto:
+		choice.auto_pick = true
 
 
 func _physics_process(_delta: float) -> void:
