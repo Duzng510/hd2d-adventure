@@ -17,6 +17,7 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	_check_copy_width()
 	var arena: Node = load("res://scenes/phase_c/grove_arena.tscn").instantiate()
 	root.add_child(arena)
 	# physics_frame fires before _physics_process, so the process frame after it
@@ -93,6 +94,29 @@ func _run() -> void:
 	arena.queue_free()
 	sheet.queue_free()
 	await process_frame
+
+
+## The card text area is 144 px (160 px card - 2 * 8 px inset) and the cards
+## autowrap, so any gain/cost line wider than the area would wrap mid-phrase.
+## Measure every shipped line with the real font instead of trusting the copy.
+func _check_copy_width() -> void:
+	const TEXT_AREA_PX := 144.0
+	var font := load("res://assets/ui/fonts/vt323.ttf") as FontFile
+	var fits := font != null
+	var widest := ""
+	var widest_px := 0.0
+	if fits:
+		for entry in BuffPool.pool():
+			for key in ["title", "gain", "cost"]:
+				for line in str(entry[key]).split("\n"):
+					var px := font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT,
+						-1, Hd2dTheme.UI_FONT_SIZE).x
+					if px > widest_px:
+						widest_px = px
+						widest = line
+					fits = fits and px <= TEXT_AREA_PX
+	print("COPY widest line %.1f px: %s" % [widest_px, widest])
+	_check(fits, "T30.4 every card line fits the 144 px text area")
 
 
 func encounter_scene_player_stats(arena: Node) -> PlayerStats:
