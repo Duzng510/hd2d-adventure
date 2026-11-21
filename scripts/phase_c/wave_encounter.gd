@@ -4,9 +4,12 @@ extends Node
 ## Phase C arena encounter: spawns waves, drives WaveKernel, owns win/lose/reset
 ## and wave logging. Wave composition is data-driven: wave_roles lists a role
 ## per spawn and enemy_scenes maps each role to its scene. T-022 adds the reward.
+## T-030 adds the per-run buff kernel, its seed log and the picked-buff path.
 
 signal run_ended(won: bool)
 signal run_reset
+## Emitted once when the flow parks in BUFF_PENDING, carrying the 3-card offer.
+signal buff_offer(offers: Array)
 
 @export var tuning: CombatTuning
 @export var enemy_scenes: Dictionary = {}
@@ -17,6 +20,10 @@ signal run_reset
 ]
 @export var wave_pause_frames: int = 60
 @export var reset_delay_frames: int = 120
+## T-030 opt-in, default off so every pre-T-030 harness keeps the auto-advance.
+@export var buff_pick_enabled: bool = false
+## Fixed first-run seed for harnesses; 0 rolls a random seed per run.
+@export var buff_seed_base: int = 0
 @export var player_path: NodePath = NodePath("../Player")
 @export var director_path: NodePath = NodePath("../CombatDirector")
 @export var player_spawn := Vector3(0.0, 0.0, 4.5)
@@ -30,6 +37,8 @@ signal run_reset
 ]
 
 var kernel: WaveKernel
+## Current run's buff kernel; rebuilt per run so a reset re-rolls the seed.
+var buff: BuffKernel
 var runs_completed: int = 0
 var wins: int = 0
 var losses: int = 0
@@ -40,6 +49,8 @@ var _director: CombatDirector
 var _enemies: Array[Grunt] = []
 var _end_frame: int = -1
 var _next_target_id: int = 10
+var _buff_seed: int = 0
+var _offer_emitted: bool = false
 
 
 func _ready() -> void:
@@ -50,6 +61,7 @@ func _ready() -> void:
 	for roles in wave_roles:
 		sizes.append((roles as Array).size())
 	kernel = WaveKernel.new(sizes, wave_pause_frames)
+	kernel.buff_pick_enabled = buff_pick_enabled
 
 
 func _physics_process(_delta: float) -> void:
@@ -70,6 +82,10 @@ func _physics_process(_delta: float) -> void:
 				_begin_wave()
 			if kernel.state == WaveKernel.State.WON:
 				_end_run(true)
+		WaveKernel.State.BUFF_PENDING:
+			if not _offer_emitted:
+				_offer_emitted = true
+				buff_offer.emit(buff.offer())
 		WaveKernel.State.WON, WaveKernel.State.LOST:
 			# A win keeps the player in control so the opened gate stays walkable.
 			if kernel.state == WaveKernel.State.LOST and _end_frame >= 0 and _director.sim_frame - _end_frame >= reset_delay_frames:
@@ -100,6 +116,34 @@ func enemies() -> Array[Grunt]:
 	return copy
 
 
+## Current run's buff seed (0 before the first run starts). Logged as buff_seed
+## at run start, so a real run is reproducible from its combat log.
+func buff_seed() -> int:
+	return _buff_seed
+
+
+## Opt the flow into BUFF_PENDING; the chooser UI calls this on _ready.
+func set_buff_pick_enabled(enabled: bool) -> void:
+	buff_pick_enabled = enabled
+	if kernel != null:
+		kernel.buff_pick_enabled = enabled
+
+
+## Applies a picked buff. Only valid while the flow is parked in BUFF_PENDING,
+## so a pick can never change the windows of a swing already in flight.
+func apply_buff(id: StringName) -> bool:
+	if buff == null or kernel.state != WaveKernel.State.BUFF_PENDING:
+		return false
+	var entry := buff.take(id)
+	if entry.is_empty():
+		return false
+	_combat.stats.add_modifier(id, entry["ops"])
+	_director.log_event(&"buff", &"buff_pick", 0, 0, BuffPool.index_of(id) + 1)
+	_offer_emitted = false
+	kernel.resolve_pick()
+	return true
+
+
 ## Evidence-harness hook: drops the tracked enemies and in-flight projectiles
 ## without starting a new run, so a stage can measure one spawned role alone.
 func debug_clear_enemies() -> void:
@@ -124,6 +168,7 @@ func reset_run() -> void:
 	kernel.reset()
 	_next_target_id = 10
 	_end_frame = -1
+	_offer_emitted = false
 	runs_completed += 1
 	_director.log_event(&"encounter", &"encounter_reset", 0, 0, runs_completed)
 	run_reset.emit()
@@ -131,6 +176,10 @@ func reset_run() -> void:
 
 
 func _start_run() -> void:
+	_buff_seed = (buff_seed_base + runs_completed) if buff_seed_base > 0 else (randi() % 1000000 + 1)
+	buff = BuffKernel.new(BuffPool.pool(), _buff_seed)
+	_offer_emitted = false
+	_director.log_event(&"buff", &"buff_seed", 0, 0, _buff_seed)
 	kernel.start()
 	kernel.wave_start_pending = false
 	_begin_wave()

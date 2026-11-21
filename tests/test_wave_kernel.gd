@@ -59,6 +59,28 @@ func _run_all(kernel: WaveKernel) -> void:
 	_check(lost.state == WaveKernel.State.INACTIVE and lost.wave_index == 0, "reset -> INACTIVE wave 0")
 	_check(WaveKernel.new([5, 4, 1], 60).wave_count() == 3, "wave_count = wave_sizes.size()")
 
+	# T-030: pending semantics behind a default-off flag.
+	var off := WaveKernel.new([1, 1], 60)
+	off.start()
+	off.tick(1)
+	off.tick(0)
+	_check(off.state == WaveKernel.State.PAUSED, "flag off keeps the T-018 auto-advance")
+	var on := WaveKernel.new([1, 1], 60)
+	on.buff_pick_enabled = true
+	on.start()
+	on.tick(1)
+	on.tick(0)
+	_check(on.state == WaveKernel.State.BUFF_PENDING, "flag on stalls the flow in BUFF_PENDING")
+	for i in 10:
+		on.tick(0)
+	_check(on.state == WaveKernel.State.BUFF_PENDING, "BUFF_PENDING never advances without resolve_pick")
+	on.resolve_pick()
+	_check(on.state == WaveKernel.State.PAUSED and on.pause_remaining == 60,
+		"resolve_pick hands over to the normal 60 tick pause")
+	on.reset()
+	_check(on.state == WaveKernel.State.INACTIVE and on.buff_pick_enabled,
+		"reset returns to INACTIVE and keeps the scene-level opt-in")
+
 
 func _check(condition: bool, label: String) -> void:
 	_checks += 1
