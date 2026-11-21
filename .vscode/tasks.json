@@ -9,6 +9,15 @@
 			"problemMatcher": [],
 			"presentation": { "reveal": "silent", "panel": "dedicated", "close": false },
 			"options": { "cwd": "${workspaceFolder}" }
+		},
+		{
+			"label": "godot: run all headless suites",
+			"type": "shell",
+			"command": "node tools/run_tests.mjs",
+			"group": { "kind": "test" },
+			"problemMatcher": [],
+			"presentation": { "reveal": "always", "panel": "shared" },
+			"options": { "cwd": "${workspaceFolder}" }
 		}
 	]
 }
