@@ -8,7 +8,7 @@
 
 **Tech Stack:** Godot 4.7.2 typed GDScript; physics-frame timing at 60 tick/s; headless `SceneTree` tests with negative controls; renderer-mode capture scenes (`--fixed-fps 60`) for L3 evidence; `Hd2dTheme`/`UiCopy` as the only style and copy sources.
 
-**Spec:** `docs/phase-d/UI_PROGRESSION_SPEC.md` §4 (damage numbers), §5 (sheet toggle), §7 (UI laws), §8 (DG1–DG5). Branch: `phase-d/t031-damage-numbers`, stacked on `phase-d/t030-wave-buff-choice` @ `7853c90` (T-030 owns `CharacterSheet` and `SHEET_SIZE`, which this task extends; the PR rebases onto `main` once #25 merges).
+**Spec:** `docs/phase-d/UI_PROGRESSION_SPEC.md` §4 (damage numbers), §5 (sheet toggle), §7 (UI laws), §8 (DG1–DG5). Branch: `phase-d/t031-damage-numbers`, cut from `main` after PR #25 merged T-030 (which owns `CharacterSheet` and `SHEET_SIZE`, both extended here).
 
 ## Global Constraints
 
