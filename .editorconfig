@@ -1,0 +1,27 @@
+root = true
+
+# end_of_line is deliberately unset: the dev box runs git with
+# core.autocrlf=true, so pinning LF here would make the editor rewrite every
+# checked-out file and re-create the phantom "modified" state.
+
+[*]
+charset = utf-8
+indent_style = tab
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{gd,tscn,tres}]
+indent_style = tab
+
+[*.{yml,yaml,json}]
+indent_style = space
+indent_size = 2
+
+[*.md]
+indent_style = space
+trim_trailing_whitespace = false
+
+[*.bat]
+end_of_line = crlf
+indent_style = space
+indent_size = 2

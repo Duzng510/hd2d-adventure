@@ -1,4 +1,11 @@
 # Harnesses rewrite evidence logs with LF bytes. Without -text, core.autocrlf
 # flags them modified after every run even when the content is byte-identical.
+# Covers every format a harness writes, not just the two first hit in practice.
 docs/**/evidence/**/*.csv -text
 docs/**/evidence/**/*.txt -text
+docs/**/evidence/**/*.json -text
+docs/**/evidence/**/*.md -text
+
+# Godot regenerates these sidecars with LF on every --import.
+*.import -text
+*.translation -text

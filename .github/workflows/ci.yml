@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  headless:
+    name: L1 static + L2 headless
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore cached engine
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux-x86_64
+
+      - name: Install Godot (headless build)
+        run: |
+          set -euo pipefail
+          asset="Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          mkdir -p "$HOME/.cache/godot" "$HOME/.local/bin"
+          if [ ! -f "$HOME/.cache/godot/$asset" ]; then
+            curl -fsSL --retry 3 -o "$HOME/.cache/godot/$asset" \
+              "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/$asset"
+          fi
+          unzip -q -o "$HOME/.cache/godot/$asset" -d "$HOME/.local/bin"
+          binary="$HOME/.local/bin/Godot_v${GODOT_VERSION}-stable_linux.x86_64"
+          chmod +x "$binary"
+          echo "GODOT=$binary" >> "$GITHUB_ENV"
+          "$binary" --version
+
+      - name: Import project
+        run: |
+          "$GODOT" --headless --path . --import
+
+      - name: L1 static check, every GDScript
+        run: |
+          fail=0
+          count=0
+          for f in $(git ls-files '*.gd'); do
+            count=$((count + 1))
+            out=$("$GODOT" --headless --path . --check-only --script "res://$f" 2>&1) && rc=0 || rc=$?
+            if [ "$rc" -ne 0 ] || printf '%s' "$out" | grep -Eq 'SCRIPT ERROR|Parse Error|Compile Error'; then
+              echo "::error title=L1 $f::exit $rc"
+              printf '%s\n' "$out" | tail -8
+              fail=1
+            fi
+          done
+          echo "L1 checked $count scripts"
+          exit "$fail"
+
+      - name: L2 headless suites
+        run: node tools/run_tests.mjs
+
+      - name: L2 arena loads and runs 120 physics frames
+        run: |
+          out=$("$GODOT" --headless --path . res://scenes/phase_c/grove_arena.tscn --quit-after 120 2>&1) && rc=0 || rc=$?
+          printf '%s\n' "$out" | tail -12
+          if [ "$rc" -ne 0 ] || printf '%s' "$out" | grep -q 'SCRIPT ERROR'; then
+            echo "::error title=L2 arena::exit $rc"
+            exit 1
+          fi
+
+      - name: Stat-source law
+        run: node tools/check_stat_source.mjs

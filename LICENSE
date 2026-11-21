@@ -1,0 +1,18 @@
+Copyright (c) 2026 Duzng510. All rights reserved.
+
+This repository, including its source code, scenes, documentation, evidence
+artifacts and original artwork, is proprietary. No licence to reproduce,
+redistribute, sublicense, or create derivative works is granted, in source or
+binary form, without the prior written permission of the copyright holder.
+
+The following are not covered by this notice:
+
+- Third-party components keep their own licences. The VT323 font is
+  (c) Peter Hull, SIL Open Font License 1.1, shipped unmodified in
+  assets/ui/fonts/ together with its licence text. Every external asset is
+  listed with its origin, date and licence in assets/ASSET_LOG.md.
+- Godot engine binaries and the engine's own dependencies, which are used to
+  run this project but are not part of it.
+
+No permission is granted to use the project name or the HD-2D term as a
+trademark for endorsement purposes.
