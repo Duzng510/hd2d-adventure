@@ -2,7 +2,7 @@
 
 Trạng thái: **PROPOSED** (chờ user duyệt file này) · Ngày: 2026-11-21 · Phase: **D** (T-029…T-031)
 Nguồn ràng buộc: GDD 0.7.1 (pillar 1, pillar 3, mục 11), AGENTS.md (physics frame 60, một nguồn authoritative, texel D-008), MASTER_PROMPT 3.4.1 (mức tự chủ §3, task/branch).
-Các quyết định đã chốt qua chat với user (2026-11-21): ESC **tạm dừng** game; buff **số học + đánh đổi**; buff **reset khi R/thua**; UI **code-gen + Godot Theme**; kiến trúc stat layer **A — PlayerStats thuần**; buff-pick **chặn wave + dừng world**; font **m5x7 (Daniel Linssen, public domain)**; mở **Phase D, T-029…T-031**.
+Các quyết định đã chốt qua chat với user (2026-11-21): ESC **tạm dừng** game; buff **số học + đánh đổi**; buff **reset khi R/thua**; UI **code-gen + Godot Theme**; kiến trúc stat layer **A — PlayerStats thuần**; buff-pick **chặn wave + dừng world**; font **VT323 (Peter Hull, SIL OFL 1.1 — thay m5x7 sau khi gate coverage báo thiếu 17 glyph tiếng Việt)**; mở **Phase D, T-029…T-031**.
 
 ---
 
@@ -27,7 +27,7 @@ Thứ tự triển khai: **T-029 → T-031 → T-030** (T-030 là mặt phẳng 
 - **D-021 · Phase D mở** với ba task UI/progression trước nội dung field/dungeon; lý do: throughput player là nút thắt đã đo (D-018 4,8 dmg/s vs 300 HP), buff damage là đòn bẩy trực tiếp; MVS-AC1…8 vẫn PROPOSED.
 - **D-022 · `PlayerStats` là nguồn runtime duy nhất** cho chỉ số nhân vật (base từ `combat_tuning.tres` ⊕ modifiers). Luật ưu tiên ở §3.2 + check máy `tools/check_stat_source.mjs`.
 - **D-023 · Buff model:** pool data + `BuffKernel` seed được, mỗi món 1 lần/run, 2 lần chọn/run, reset khi R/thua; buff chỉ áp dụng khi world không có đòn đang chạy.
-- **D-024 · UI layer:** Theme dựng bằng code (`hd2d_theme.gd` + StyleBox 9-slice code-gen), font m5x7 (public domain, ghi ASSET_LOG), kích thước panel chia hết 4, chữ integer-px, coverage font kiểm bằng máy.
+- **D-024 · UI layer:** Theme dựng bằng code (`hd2d_theme.gd` + StyleBox 9-slice code-gen), font VT323 (SIL OFL 1.1, ghi ASSET_LOG), cỡ chữ bội số 16, kích thước panel chia hết 4, chữ integer-px, coverage font kiểm bằng máy + negative control.
 
 ---
 
@@ -90,7 +90,7 @@ Thứ tự tính cho số nguyên: `floor((base + Σ add) × Π mult)`; số fra
 ## 5. Bảng trạng thái — ESC (T-029)
 
 - InputMap action mới **`toggle_character_sheet`** (Escape). Không đọc phím cứng.
-- Mở: `get_tree().paused = true`; panel subtree `process_mode = PROCESS_MODE_WHEN_PAUSED`; đóng: unpause. Trong `BUFF_PENDING` (modal buff mở) ESC **bị bỏ qua** — modal đang giữ ưu tiên.
+- Mở: `get_tree().paused = true`; node sheet `process_mode = PROCESS_MODE_ALWAYS` (`WHEN_PAUSED` không nghe được ESC lúc game còn chạy nên sheet sẽ không bao giờ mở được); đóng: unpause. Trong `BUFF_PENDING` (modal buff mở) ESC **bị bỏ qua** — modal đang giữ ưu tiên.
 - Nội dung **chỉ đọc từ `PlayerStats` + `BuffKernel` + `WaveKernel`** (không hằng số viết tay): HP hiện/max; damage hiệu lực; chu kỳ đòn (startup/active/recovery) và dmg/tick lý thuyết; reach; combo hits/window; dodge speed/frames/i-frame; mệt (free/step/cap/decay hiệu lực); danh sách buff đang mang (tên + lợi/hại); wave hiện tại/trạng thái; `buff_seed` của run.
 - Toggle "Số sát thương BẬT/TẮT" (lưu trong biến session, không save — chưa có save system).
 - Focus: đúng một `grab_focus()` khi mở (bài học D-020); đóng bằng ESC hoặc nút Đóng; phím mũi tên/Enter theo pattern `title_screen.gd`.
@@ -138,8 +138,8 @@ player_died(): FIGHTING/PAUSED -> LOST (BUFF_PENDING không thể, world paused)
 
 - **Theme dựng bằng code:** `scripts/ui/hd2d_theme.gd` — `static func build() -> Theme`; StyleBox 9-slice sinh bằng code theo texel (cùng trường phái `PlaceholderTextures`), áp làm `theme` của UI root để mọi panel kế thừa. Không asset khung tải về.
 - **Palette:** panel `#12161c`, viền `#2c3542`, focus/tiêu đề `#d9b26a`, chữ `#e8e4da`, số sát thương `#ffffff`, phần "đổi lại" của buff `#c0695a` (không dùng đỏ telegraph địch).
-- **Font:** m5x7 (Daniel Linssen, public domain) tại `assets/ui/fonts/m5x7.ttf`, ghi `assets/ASSET_LOG.md` (nguồn, ngày, license). Antialiasing/hinting tắt. Cỡ chữ = **bội số nguyên của 7 px** (14/21/28) — sửa lại con số 12/16/24 đã nói ở chat: đơn vị đúng là chiều cao glyph của font, không phải texel world.
-- **Coverage tiếng Việt — rủi ro đã biết:** chưa chắc m5x7 có đủ dấu (ế, ộ, ữ…). Gate bắt buộc: `tests/test_font_coverage.gd` assert `font.has_char()` với **toàn bộ** ký tự UI copy; negative control với ký tự ngoài bảng mã phải đỏ. Nếu fail: hoặc copy UI rút về Latin (chấp nhận mất dấu), hoặc thêm fallback font (ghi DECISIONS) — **không** tự đổi font im lặng.
+- **Font:** VT323 (Peter Hull, SIL OFL 1.1) tại `assets/ui/fonts/vt323.ttf` (toàn văn license `OFL-VT323.txt` cùng thư mục), ghi `assets/ASSET_LOG.md` (nguồn, ngày, license, sha256). Antialiasing/hinting/subpixel đặt tắt trong `Hd2dTheme.build()`. Cỡ chữ = **bội số nguyên của 16 px** (16 body / 32 title) — 16 px là lưới terminal 8×16 gốc của font, nên không resample; đơn vị đúng là chiều cao cell của font, không phải texel world.
+- **Coverage tiếng Việt:** m5x7 đã bị loại (cmap thiếu 17 glyph copy cần — `Ơ ơ Ư Ạ ạ Ầ Ậ Ắ Ế Ệ Ị Ổ Ộ Ớ Ở Ỳ` và em dash), VT323 phủ 567 codepoint và qua gate. Gate bắt buộc: `tests/test_font_coverage.gd` assert `font.has_char()` với **toàn bộ** ký tự UI copy (hiện 79 glyph, 0 missing); negative control với ký tự ngoài bảng mã phải đỏ. Nếu fail: hoặc copy UI rút về Latin (chấp nhận mất dấu), hoặc thêm fallback font (ghi DECISIONS) — **không** tự đổi font im lặng.
 - **Hình học:** panel 480×320, card 160×220, spacing 8/16 (chia hết 4); vị trí/tọa độ integer px; outline 2–4 px như HUD hiện tại.
 - **Motion:** card stagger 0.05 s, fade+scale 0.12 s EASE_OUT; số sát thương 0.55 s. Không shake/flash toàn màn hình.
 
@@ -157,7 +157,7 @@ player_died(): FIGHTING/PAUSED -> LOST (BUFF_PENDING không thể, world paused)
 
 ## 9. Rủi ro & giới hạn
 
-1. **Font thiếu dấu tiếng Việt** (m5x7) — gate §7; nếu fail phải có quyết định user.
+1. **Font thiếu dấu tiếng Việt** — đã xảy ra với m5x7 (17 glyph) và được chốt bằng VT323 (OFL 1.1); gate §7 giữ nguyên để một font khác sau này không lọt qua im lặng.
 2. **Đổi nguồn `speed` của player** (controller → tuning/stats) — nguy cơ lệch hành vi movement Phase A; giữ giá trị 4.0 và chạy lại test movement + G1 capture.
 3. **`BUFF_PENDING` chèn vào flow** — flag mặc định false để 22 test/harness cũ không đổi; harness t030 bật true mới phủ trạng thái mới.
 4. **Tắt font/hiển thị giữa chừng** — damage number là toggle thông tin; không được biến thành feel toggle.
@@ -168,4 +168,4 @@ player_died(): FIGHTING/PAUSED -> LOST (BUFF_PENDING không thể, world paused)
 
 - [ ] Spec này được duyệt nguyên trạng, hay sửa phần nào?
 - [ ] Thứ tự task T-029 → T-031 → T-030 OK?
-- [ ] Cho phép tải `m5x7.ttf` từ trang tác giả và ghi ASSET_LOG?
+- [x] Cho phép tải `vt323.ttf` (SIL OFL 1.1) từ Google Fonts và ghi ASSET_LOG? — user chọn "đổi sang font pixel khác có đủ dấu" (chat, 2026-11-21)
