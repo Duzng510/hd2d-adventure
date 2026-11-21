@@ -349,11 +349,86 @@ no HUD reading; in a \`--fixed-fps\` capture it is meaningless by definition.
 `;
 }
 
+// --- T-032 tempo tell -------------------------------------------------------
+// The combat log has carried the fatigue charged by each swing since T-027
+// (action_start value), so the cadence question is measurable from the very same
+// session file - no second probe, no new build path.
+const FATIGUE_STEPS = [0, 4, 8, 12]; // combat_tuning.tres: step 4, cap 12
+// A dodge counts as "reacting to the boss" when a telegraph window is open this
+// close to it; anything wider and every dodge in a boss fight would look reactive.
+const DODGE_DANGER_WINDOW = 30;
+
+function tempoStats(events) {
+	const swings = events.filter((event) => event.entity === 'player' && event.event === 'action_start');
+	const tiers = {};
+	for (const swing of swings) tiers[swing.value] = (tiers[swing.value] ?? 0) + 1;
+	const windows = [];
+	for (const event of events) {
+		if (event.entity !== 'boss') continue;
+		if (event.event === 'telegraph_start') windows.push({ from: event.frame, to: null });
+		else if (event.event === 'active_start' && windows.length > 0 && windows[windows.length - 1].to === null) {
+			windows[windows.length - 1].to = event.frame;
+		}
+	}
+	for (const window of windows) if (window.to === null) window.to = window.from + 40;
+	const dangerAt = (frame) => windows.some(
+		(window) => frame >= window.from - DODGE_DANGER_WINDOW && frame <= window.to + DODGE_DANGER_WINDOW,
+	);
+	let charged = null;
+	const afterPaid = [];
+	const afterFree = [];
+	for (const event of events) {
+		if (event.entity !== 'player') continue;
+		if (event.event === 'action_start') {
+			charged = event.value;
+			continue;
+		}
+		if (event.event !== 'input_dodge' || charged === null) continue;
+		// Only the first pay-back after a swing counts, or one held key would
+		// inflate the group it belongs to.
+		(charged > 0 ? afterPaid : afterFree).push(dangerAt(event.frame));
+		charged = null;
+	}
+	const rate = (list) => (list.length === 0 ? null : Math.round((100 * list.filter(Boolean).length) / list.length));
+	return {
+		swings: swings.length,
+		paid: swings.filter((swing) => swing.value > 0).length,
+		ceiling: tiers[12] ?? 0,
+		tiers,
+		dodgesAfterPaid: afterPaid.length,
+		dangerAfterPaid: rate(afterPaid),
+		dangerAfterFree: rate(afterFree),
+	};
+}
+
+function tempoTable(stats) {
+	const tiers = FATIGUE_STEPS.map((step) => `${step}t ${stats.tiers[step] ?? 0}`).join(', ');
+	const noDenominator = stats.dangerAfterPaid === null || stats.dangerAfterFree === null;
+	const split = noDenominator
+		? 'n/a (one group has no dodge - a rate here would be invented)'
+		: `${stats.dangerAfterPaid}% vs ${stats.dangerAfterFree}%`;
+	return `## Tempo tell (T-032) - measured from the same log, arm-blind
+
+| measurement | value |
+|---|---|
+| swings, split by tier charged | ${stats.swings} (${tiers}) |
+| swings that paid a tier | ${share(stats.paid, stats.swings)} |
+| swings sitting on the ceiling (12 tick) | ${stats.ceiling} |
+| pay-back dodges right after a paid swing | ${stats.dodgesAfterPaid} |
+| boss telegraph open at those dodges vs at other dodges | ${split} |
+
+The last row is the only one that separates "dodged because the tell said I am
+tired" from "dodged because a boss was about to hit me". Two close columns mean
+the log cannot tell them apart - and an n/a means no denominator, not a zero.
+`;
+}
+
 function buildReport(source, events, runs, problems, engine, expectedRuns, probe) {
 	const valid = runs.filter((run) => run.resetBefore && run.resetAfter && run.result !== null);
 	const wins = valid.filter((run) => run.result === 'W').length;
 	const hitsTaken = valid.reduce((sum, run) => sum + run.hitsTaken, 0);
 	const probeProblems = probe === null ? [] : attachProbe(runs, probe.rows, events);
+	const tempo = tempoStats(events);
 	const allProblems = problems.concat(probeProblems);
 	const measured = probe === null ? [] : runs.filter((run) => run.probe !== undefined && run.probe.hits > 0);
 	const readable = measured.reduce((sum, run) => sum + run.probe.readable, 0);
@@ -395,6 +470,7 @@ ${rows}
 ${probe === null ? '' : probeTable(runs)}Total hits taken across valid runs = **${hitsTaken}**. That is the denominator \`n\` of
 C2.2; the numerator \`x\` (hits whose reason the player understood) is user-reported only.
 
+${tempoTable(tempo)}
 ## Machine-checkable sub-gates
 
 | gate | measurement | status |
@@ -419,6 +495,10 @@ ${problems.length === 0 ? 'none' : problems.map((line) => `- ${line}`).join('\n'
 			probeRows: probe === null ? 0 : probe.rows.length,
 			readableShare: `${readable}/${measured.reduce((sum, run) => sum + run.probe.hits, 0)}`,
 			punishShare,
+			tempoPaid: share(tempo.paid, tempo.swings),
+			tempoCeiling: tempo.ceiling,
+			tempoDanger: tempo.dangerAfterPaid === null || tempo.dangerAfterFree === null
+				? 'n/a' : `${tempo.dangerAfterPaid}/${tempo.dangerAfterFree}`,
 			fpsPlayMin: fpsMin === null ? '-' : fpsMin,
 			fpsLaunchMin: fpsLaunchMin,
 			scriptErrors: engine === null ? 'n/a' : engine.scriptErrors,
@@ -593,6 +673,28 @@ const CASES = [
 	{ name: 'probe-punish-used', broken: null, expect: { punishShare: '100%' }, events: () => baseSession(2), probe: (events) => baseProbe(events, { bossTrace: { from: wave3Frame(events), damage: 10, inRecovery: true } }) },
 	{ name: 'probe-punish-unused', broken: null, expect: { punishShare: '0%' }, events: () => baseSession(2), probe: (events) => baseProbe(events, { bossTrace: { from: wave3Frame(events), damage: 10, inRecovery: false } }) },
 	{ name: 'punish-trace-desync', broken: 'boss_hp trace shows', events: () => baseSession(2), probe: (events) => baseProbe(events, { bossTrace: { from: wave3Frame(events), damage: 30, inRecovery: true } }) },
+	{
+		name: 'tempo-danger-split',
+		broken: null,
+		expect: { tempoDanger: '0/100' },
+		events: () => {
+			// One dodge after a swing that paid the ceiling with no boss window
+			// anywhere near it, one dodge after a free swing inside a live
+			// telegraph: the split row must read 0% vs 100% or it is not
+			// measuring the gap. Frames sit past the final reset so the injected
+			// boss window cannot collide with a real run's boss telegraph.
+			const base = baseSession(2);
+			return inject(base, (event) => event.event === 'encounter_reset', [
+				row(900010, 'player', 'action_start', 777, 0, 12),
+				row(900016, 'player', 'input_dodge', 0, 0, 0),
+				row(900060, 'boss', 'telegraph_start', 779, 0, 0),
+				row(900064, 'player', 'action_start', 778, 0, 0),
+				row(900066, 'player', 'input_dodge', 0, 0, 0),
+				row(900060 + TELEGRAPH_FLOOR, 'boss', 'active_start', 779, 0, 0),
+			]);
+		},
+	},
+	{ name: 'tempo-no-paid', broken: null, expect: { tempoPaid: '0%', tempoDanger: 'n/a' }, events: () => baseSession(2) },
 	{ name: 'missing-header', broken: 'line 1 is not the log header', raw: '0,encounter,wave_start,0,0,1\n10,encounter,encounter_win,0,0,0\n' },
 ];
 
@@ -620,9 +722,11 @@ function selftest(wanted) {
 				&& (expected.readableShare === undefined || summary.readableShare === expected.readableShare)
 				&& (expected.punishShare === undefined || summary.punishShare === expected.punishShare)
 				&& (expected.fpsPlayMin === undefined || summary.fpsPlayMin === expected.fpsPlayMin)
-				&& (expected.fpsLaunchMin === undefined || summary.fpsLaunchMin === expected.fpsLaunchMin);
+				&& (expected.fpsLaunchMin === undefined || summary.fpsLaunchMin === expected.fpsLaunchMin)
+				&& (expected.tempoPaid === undefined || summary.tempoPaid === expected.tempoPaid)
+				&& (expected.tempoDanger === undefined || summary.tempoDanger === expected.tempoDanger);
 			failures += ok ? 0 : 1;
-			console.log(`${ok ? 'ok  ' : 'FAIL'} ${item.name}: clean fixture measured valid=${summary.valid} wins=${summary.wins} violations=${problems.length} punish=${summary.punishShare}`);
+			console.log(`${ok ? 'ok  ' : 'FAIL'} ${item.name}: clean fixture measured valid=${summary.valid} wins=${summary.wins} violations=${problems.length} punish=${summary.punishShare} tempo=${summary.tempoDanger}@${summary.tempoPaid}`);
 			for (const line of problems) console.log(`       unexpected red: ${line}`);
 			continue;
 		}
