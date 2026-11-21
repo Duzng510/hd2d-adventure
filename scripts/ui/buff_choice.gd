@@ -53,8 +53,10 @@ func present(offers: Array) -> void:
 			continue
 		var entry: Dictionary = _offers[i]
 		_card_titles[i].text = str(entry["title"])
-		_card_gains[i].text = UiCopy.BUFF_GAIN + " " + str(entry["gain"])
-		_card_costs[i].text = UiCopy.BUFF_COST + " " + str(entry["cost"])
+		# Prefix on its own line: "ĐỔI LẠI " costs 51 px of the 144 px text area,
+		# which no informative cost fits after. Measured, not guessed.
+		_card_gains[i].text = UiCopy.BUFF_GAIN + "\n" + str(entry["gain"])
+		_card_costs[i].text = UiCopy.BUFF_COST + "\n" + str(entry["cost"])
 	_wave_label.text = ""
 	if _encounter != null and _encounter.kernel != null:
 		_wave_label.text = UiCopy.BUFF_PANEL_WAVE % (_encounter.kernel.wave_index + 1)
