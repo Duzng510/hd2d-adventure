@@ -80,18 +80,19 @@
 - [ ] Step 2: clamp the incoming level to `level_max()` in the consumer (view law, not a second calculation of the cost).
 - [ ] Step 3: L1 on `grove_arena.gd`; L2 arena smoke `"…exe" --headless --path . res://scenes/phase_c/play_arena.tscn --quit-after 120` exit 0, no `SCRIPT ERROR`.
 
-### Task 5: L2 flow evidence
+### Task 5: L2 flow evidence — DONE
 
-`t032_tell_driver.gd` drives the player through the same two policies as P27 (paced = one input per `17 + decay` ticks, mash = every tick) by pushing real input, and asserts:
-- `T32.0` both policies still deal damage (the tell is not a nerf).
-- `T32.1` paced tier trace never exceeds tier 1; mash reaches `level_max()` and holds.
-- `T32.2` the tier trace equals `fatigue_frames() / step` at every sampled tick — the display cannot drift from the cost.
-- `T32.3` `fatigue_level_changed` count == number of tier transitions observed in the trace (no per-frame spam), and never fires twice with the same level.
-- `T32.4` `show_tempo_tell = false` → 0 emits consumed by the view and the texture stays the T-026 one.
-- `T32.5` after `dodge` the tier drops to 0 within one tick (the wipe is readable, not just computed).
-- `-- negative`: force the emitted level to a constant → `T32.1`/`T32.3` must go red and exit 1 (proof the ruler can fail, per repo rule).
+`t032_tell_driver.gd` + `scenes/phase_c/run_t032_tell.tscn` (script on the **root**, so `_enter_tree` can set the export/tuning before the arena readies). Three bots, sampled on every physics frame:
 
-Scene `scenes/phase_c/run_t032_tell.tscn`; run with `--quit-after` sized to the longest policy.
+- `T32.0` all three cadences still deal damage — the tell is not a nerf.
+- `T32.1` the tier **charged at the swing decision**: mash = ceiling (3), paced = none (0), loose = one (1).
+- `T32.1b` a paced player still *reads* tired mid-recovery (1), and the middle bot never sits on the ceiling (2). The mechanic's promise is about the decision instant, not about every tick — the first version of this check demanded tier 0 all through a paced run and was wrong, not the tell.
+- `T32.2` every frame: `level == frames / step`, with `step` read through `PlayerStats` so `check_stat_source.mjs` stays clean.
+- `T32.3` `emits == transitions` (41 == 41) with zero repeated levels. Two false alarms were fixed in the harness, not the gate: per-loop sampling missed the reset tick between runs, and the last edge lands one frame after the sample that saw it, so the stream is allowed to settle before the count.
+- `T32.3b` the ring material really holds a different texture at the ceiling tier.
+- `T32.4` mode `tell-off`: arena connects nothing, the cost is still charged (tier 3), the art never swaps — the export hides the drawing only.
+- `T32.5` a synthesized dodge (`Input.action_press`) drops the tier 3 → 0 within a tick.
+- Rulers that must go red: `-- negative` (free allowance 100000) → `T32.1`/`T32.1b`/`T32.3` red, exit 1; `-- broken-wire` (arena consumer disconnected) → `T32.3b` red, exit 1. `-- trace` prints the EMIT/TRACE streams for review.
 
 ### Task 6: L3 capture (renderer mode, not `--headless`)
 
