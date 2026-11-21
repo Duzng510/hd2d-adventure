@@ -30,6 +30,11 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"toggle_character_sheet"):
+		# T-030: the buff pick owns the screen until it resolves; opening the
+		# sheet here would stack two pauses and hide the cards.
+		if _encounter != null and _encounter.kernel != null \
+				and _encounter.kernel.state == WaveKernel.State.BUFF_PENDING:
+			return
 		if _open:
 			close()
 		else:
@@ -91,13 +96,24 @@ func refresh() -> void:
 	_rows[&"fatigue"].text = UiCopy.SHEET_FATIGUE_ROW % [
 		_stats.fatigue_free_swings(), _stats.fatigue_step_frames(),
 		_stats.fatigue_max_frames(), _stats.fatigue_decay_frames()]
+	_rows[&"wave"].text = UiCopy.SHEET_PLACEHOLDER
+	if _encounter != null and _encounter.kernel != null:
+		_rows[&"wave"].text = UiCopy.HUD_WAVE_PROGRESS % [
+			_encounter.kernel.wave_index + 1, _encounter.kernel.wave_count()]
+	_rows[&"seed"].text = UiCopy.SHEET_PLACEHOLDER
+	if _encounter != null:
+		_rows[&"seed"].text = str(_encounter.buff_seed())
 	var mods := _stats.active_modifiers()
 	if mods.is_empty():
 		_buffs.text = UiCopy.SHEET_NONE
 	else:
+		var titles := {}
+		for entry in BuffPool.pool():
+			titles[entry["id"]] = entry["title"]
 		var names: Array[String] = []
 		for entry in mods:
-			names.append(str(entry["source"]))
+			var source: StringName = entry["source"]
+			names.append(str(titles.get(source, str(source))))
 		_buffs.text = ", ".join(names)
 
 
@@ -165,6 +181,8 @@ func _build_ui() -> void:
 	_add_row(grid, &"combo", UiCopy.SHEET_COMBO)
 	_add_row(grid, &"dodge", UiCopy.SHEET_DODGE)
 	_add_row(grid, &"fatigue", UiCopy.SHEET_FATIGUE)
+	_add_row(grid, &"wave", UiCopy.SHEET_WAVE)
+	_add_row(grid, &"seed", UiCopy.SHEET_SEED)
 
 	var buff_title := Label.new()
 	buff_title.text = UiCopy.SHEET_BUFFS

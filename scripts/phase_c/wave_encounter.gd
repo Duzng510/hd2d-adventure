@@ -144,6 +144,17 @@ func apply_buff(id: StringName) -> bool:
 	return true
 
 
+## Test/capture hook: park the flow in BUFF_PENDING and emit the current offer
+## without waiting for a real wave clear.
+func debug_force_buff_pending() -> void:
+	if buff == null:
+		push_error("WaveEncounter: debug_force_buff_pending before the first run")
+		return
+	kernel.state = WaveKernel.State.BUFF_PENDING
+	_offer_emitted = true
+	buff_offer.emit(buff.offer())
+
+
 ## Evidence-harness hook: drops the tracked enemies and in-flight projectiles
 ## without starting a new run, so a stage can measure one spawned role alone.
 func debug_clear_enemies() -> void:
