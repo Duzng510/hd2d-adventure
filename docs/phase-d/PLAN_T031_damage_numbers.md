@@ -1107,8 +1107,7 @@ Expected: every run exit 0 with no `SCRIPT ERROR` lines; `run_t030_buffs` keeps 
 ```bash
 git add scripts/combat/player_combat.gd scenes/phase_c/grove_arena.tscn \
   scripts/phase_c/t031_numbers_driver.gd scripts/phase_c/t031_numbers_driver.gd.uid \
-  scenes/phase_c/run_t031_numbers.tscn scenes/phase_c/run_t031_numbers.tscn.uid \
-  scripts/ui/damage_numbers.gd
+  scenes/phase_c/run_t031_numbers.tscn scripts/ui/damage_numbers.gd
 git commit -m "feat(T-031): hook damage numbers into the damage path and mount the layer"
 ```
 
@@ -1434,7 +1433,7 @@ Expected: no `RED` lines, `25/25` suites exit 0, `stat-source clean` + selftest 
 
 ```bash
 git add scripts/ui/capture_damage_numbers.gd scripts/ui/capture_damage_numbers.gd.uid \
-  scenes/ui/capture_damage_numbers.tscn scenes/ui/capture_damage_numbers.tscn.uid \
+  scenes/ui/capture_damage_numbers.tscn \
   docs/DECISIONS.md docs/STATE.md docs/phase-d/evidence/t031
 git commit -m "feat(T-031): capture damage number evidence and record D-027"
 ```
