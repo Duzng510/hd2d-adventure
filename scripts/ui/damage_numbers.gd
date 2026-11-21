@@ -6,6 +6,10 @@ extends CanvasLayer
 ## keeps that box out of the telegraph decal under the target's feet.
 
 signal shown(target_id: int, amount: int, total: int)
+## Emitted whenever the readout turns on or off, whoever asked. The sheet listens
+## instead of remembering the flag, so a third caller (the capture, a bot mode)
+## cannot leave the button lying about the state.
+signal enabled_changed
 
 ## Spec §4 anchor: above the receiver's origin (its feet), below its head.
 const DEFAULT_ANCHOR_M := 1.1
@@ -64,10 +68,13 @@ func show_hit(receiver: Node3D, target_id: int, amount: int) -> void:
 
 
 func set_enabled(flag: bool) -> void:
+	if _enabled == flag:
+		return
 	_enabled = flag
 	if not flag:
 		_kernel.reset()
 		_hide_all()
+	enabled_changed.emit()
 
 
 func is_enabled() -> bool:

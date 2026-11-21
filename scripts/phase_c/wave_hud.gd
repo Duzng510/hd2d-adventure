@@ -27,17 +27,12 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	var kernel := _encounter.kernel
-	var state_text := UiCopy.HUD_FIGHT
+	# One state->wording map (T-031): the sheet row and this HUD row must never
+	# drift apart, and a second match is how BUFF_PENDING went missing here.
+	var state_text := CharacterSheet.wave_state_text(kernel.state)
 	var wave_text := UiCopy.HUD_WAVE_NONE
 	if kernel.state != WaveKernel.State.INACTIVE:
 		wave_text = UiCopy.HUD_WAVE_PROGRESS % [kernel.wave_index + 1, kernel.wave_count()]
-	match kernel.state:
-		WaveKernel.State.PAUSED:
-			state_text = UiCopy.HUD_NEXT
-		WaveKernel.State.WON:
-			state_text = UiCopy.HUD_WIN
-		WaveKernel.State.LOST:
-			state_text = UiCopy.HUD_LOSE
 	var line := UiCopy.HUD_ROW % [
 		_combat.health.hp, _combat.health.max_hp,
 		wave_text, _encounter.alive_count(), state_text,

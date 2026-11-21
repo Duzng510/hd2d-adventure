@@ -41,6 +41,14 @@ const HUD_ROW := "PLAYER %d/%d | WAVE %s | ENEMIES %d | %s"
 const HUD_BOSS_PHASE := "BOSS %d/%d | PHASE %d"
 const HUD_WAVE_NONE := "-"
 const HUD_WAVE_PROGRESS := "%d/%d"
+## T-031: the damage-number readout is an information toggle (spec §5), so the
+## state word is copy, not a symbol, and the coverage gate sees it.
+const SHEET_TOGGLE := "SỐ SÁT THƯƠNG: %s"
+const STATE_ON := "BẬT"
+const STATE_OFF := "TẮT"
+## Parked from T-030: "1/3" alone did not say whether the wave was fighting,
+## parked for a pick, or over.
+const SHEET_WAVE_ROW := "%d/%d (%s)"
 const BUFF_PANEL_TITLE := "CHỌN NÂNG CẤP"
 const BUFF_PANEL_WAVE := "WAVE %d HOÀN THÀNH"
 const BUFF_PANEL_HINT := "DÙNG PHÍM MŨI TÊN · ENTER ĐỂ CHỌN"
