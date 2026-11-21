@@ -16,6 +16,9 @@ const SWING_BASE_LENGTH := 1.4
 @export var hitbox_shape_path: NodePath = NodePath("../AttackHitbox/CollisionShape3D")
 @export var swing_visual_path: NodePath = NodePath("../AttackHitbox/SwingArc")
 @export var sprite_path: NodePath = NodePath("../Sprite3D")
+## T-031: the floating numbers layer. Empty by default so harnesses and scenes
+## without the layer keep running unchanged instead of crashing on a missing node.
+@export var damage_numbers_path: NodePath = NodePath("")
 ## Capture/debug hook: attack aim uses aim_override_point instead of the mouse.
 @export var aim_override_enabled: bool = false
 @export var aim_override_point := Vector3.ZERO
@@ -30,6 +33,7 @@ var _hitbox: Area3D
 var _hitbox_shape: CollisionShape3D
 var _swing: MeshInstance3D
 var _sprite: Sprite3D
+var _numbers: DamageNumbers
 
 var _attack: AttackState
 var _buffer: InputBuffer
@@ -55,6 +59,8 @@ func _ready() -> void:
 	_hitbox_shape = get_node(hitbox_shape_path)
 	_swing = get_node_or_null(swing_visual_path)
 	_sprite = get_node_or_null(sprite_path)
+	if damage_numbers_path != NodePath(""):
+		_numbers = get_node_or_null(damage_numbers_path) as DamageNumbers
 	stats = PlayerStats.new(tuning)
 	health = Health.new(stats.player_max_hp())
 	_attack = AttackState.new(
@@ -222,6 +228,8 @@ func _resolve_hits() -> void:
 			applied = int(receiver.call(&"apply_hit", stats.light_damage()))
 		_director.log_event(&"player", &"hit", _swing_id, target_id)
 		_director.log_event(&"player", &"damage", _swing_id, target_id, applied)
+		if applied > 0 and _numbers != null and receiver is Node3D:
+			_numbers.show_hit(receiver as Node3D, target_id, applied)
 		_director.request_hitstop(tuning.hitstop_frames)
 
 
