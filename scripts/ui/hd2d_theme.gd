@@ -15,6 +15,12 @@ const TITLE_FONT_SIZE := 32  # 2x body: still on the 8x16 cell, no resampling
 const SHEET_SIZE := Vector2i(480, 432)
 const CARD_SIZE := Vector2i(160, 220)
 const GAP := 16
+## T-031: floating damage numbers. 32 px is the title cell (a multiple of the
+## 16 px terminal grid) so the number reads across a horde without resampling.
+const DAMAGE := Color("#ffffff")
+const DAMAGE_OUTLINE := Color("#000000")
+const DAMAGE_OUTLINE_PX := 2
+const DAMAGE_FONT_SIZE := 32
 
 
 static func build() -> Theme:
