@@ -19,11 +19,19 @@ const GAP := 16
 
 static func build() -> Theme:
 	var theme := Theme.new()
-	var font := FontFile.new()
-	if font.load_dynamic_font(FONT_PATH) == OK:
+	# Load the imported FontFile, not the raw ttf: load_dynamic_font bypasses the
+	# import pipeline and silently falls back in exported builds.
+	var font := load(FONT_PATH) as FontFile
+	if font == null:
+		push_error("Hd2dTheme: font failed to load: " + FONT_PATH)
+	else:
 		font.antialiasing = TextServer.FONT_ANTIALIASING_NONE
 		font.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
 		font.hinting = TextServer.HINTING_NONE
+		if font.antialiasing != TextServer.FONT_ANTIALIASING_NONE \
+				or font.subpixel_positioning != TextServer.SUBPIXEL_POSITIONING_DISABLED \
+				or font.hinting != TextServer.HINTING_NONE:
+			push_error("Hd2dTheme: cannot pin font rendering flags: " + FONT_PATH)
 		theme.default_font = font
 	theme.default_font_size = UI_FONT_SIZE
 

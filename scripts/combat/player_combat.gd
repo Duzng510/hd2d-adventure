@@ -274,6 +274,8 @@ func _aim_direction() -> Vector3:
 
 
 func reset() -> void:
+	# Clear first so the HP restore below lands on the base max, not a buffed one.
+	stats.clear_modifiers()
 	health.reset()
 	_attack.cancel()
 	_dodge.cancel()
@@ -317,14 +319,49 @@ func hp() -> int:
 
 
 ## Push effective stats into the live objects. Windows change on the next
-## swing (spec §3.3); max HP grows with a matching heal.
+## swing (spec §3.3); max HP grows with a matching heal and shrinks with a
+## clamp, and tempo/dodge/reach follow the same change so buffs never lie.
 func _apply_stats() -> void:
 	var previous_max := health.max_hp
 	health.max_hp = stats.player_max_hp()
 	if health.max_hp > previous_max:
 		health.heal(health.max_hp - previous_max)
+	health.hp = mini(health.hp, health.max_hp)
 	if _player != null:
 		_player.speed = stats.move_speed()
+	_sync_tempo()
+	_sync_dodge()
+	_apply_hitbox_reach()
+
+
+func _sync_tempo() -> void:
+	if _tempo == null:
+		return
+	_tempo.free_swings = maxi(stats.fatigue_free_swings(), 0)
+	_tempo.step_frames = maxi(stats.fatigue_step_frames(), 1)
+	_tempo.max_frames = maxi(stats.fatigue_max_frames(), 0)
+	_tempo.decay_frames = maxi(stats.fatigue_decay_frames(), 1)
+
+
+func _sync_dodge() -> void:
+	if _dodge == null:
+		return
+	_dodge.total_frames = maxi(stats.dodge_total_frames(), 1)
+	_dodge.iframe_frames = clampi(stats.dodge_iframe_frames(), 0, _dodge.total_frames)
+
+
+## Reach is scene geometry, so a reach buff has to move the real BoxShape3D and
+## its local origin, not just the number the sheet prints. At the default 1.4 m
+## this reproduces the authored 1.4x0.8x0.8 box at x=0.7 exactly.
+func _apply_hitbox_reach() -> void:
+	if _hitbox_shape == null:
+		return
+	var box := _hitbox_shape.shape as BoxShape3D
+	if box == null:
+		return
+	var reach := stats.light_reach()
+	box.size = Vector3(reach, box.size.y, box.size.z)
+	_hitbox_shape.position.x = reach * 0.5
 
 
 func apply_hit(amount: int) -> int:

@@ -1,6 +1,6 @@
 # UI_PROGRESSION_SPEC — damage numbers · bảng trạng thái · buff sau wave
 
-Trạng thái: **PROPOSED** (chờ user duyệt file này) · Ngày: 2026-11-21 · Phase: **D** (T-029…T-031)
+Trạng thái: **APPROVED** (2026-11-21; font chốt **VT323** sau khi gate coverage loại m5x7) · Phase: **D** (T-029…T-031)
 Nguồn ràng buộc: GDD 0.7.1 (pillar 1, pillar 3, mục 11), AGENTS.md (physics frame 60, một nguồn authoritative, texel D-008), MASTER_PROMPT 3.4.1 (mức tự chủ §3, task/branch).
 Các quyết định đã chốt qua chat với user (2026-11-21): ESC **tạm dừng** game; buff **số học + đánh đổi**; buff **reset khi R/thua**; UI **code-gen + Godot Theme**; kiến trúc stat layer **A — PlayerStats thuần**; buff-pick **chặn wave + dừng world**; font **VT323 (Peter Hull, SIL OFL 1.1 — thay m5x7 sau khi gate coverage báo thiếu 17 glyph tiếng Việt)**; mở **Phase D, T-029…T-031**.
 
@@ -48,13 +48,13 @@ light_damage/player_max_hp/light_startup_frames/light_active_frames/light_recove
 light_reach/light_combo_hits/combo_window_frames
 fatigue_free_swings/fatigue_step_frames/fatigue_max_frames/fatigue_decay_frames
 dodge_speed/dodge_total_frames/dodge_iframe_frames/move_speed
-func add_modifier(source: StringName, ops: Dictionary) -> void   # ops: {"damage_mult":1.3, "recovery_add":3, ...}
+func add_modifier(source: StringName, ops: Dictionary) -> void   # ops: {"light_damage_mult":1.3, "light_recovery_frames_add":3, ...}
 func remove_modifier(source: StringName) -> void
 func clear_modifiers() -> void
 func active_modifiers() -> Array[Dictionary]  # cho sheet: [{source, ops}]
 ```
 
-Thứ tự tính cho số nguyên: `floor((base + Σ add) × Π mult)`; số frame kẹp ≥1. `add_modifier` với cùng `source` thay thế modifier cũ (idempotent).
+Thứ tự tính cho số nguyên: `floor((base + Σ add) × Π mult)`; số frame kẹp ≥1. `add_modifier` với cùng `source` thay thế modifier cũ (idempotent). Khóa op là **đúng tên getter + hậu tố `_add` / `_mult`** (`light_reach_add`, `player_move_speed_mult`, `fatigue_free_swings_add`, …); `PlayerStats._value()` không hiểu khóa lạ và bỏ qua im lặng, nên mọi op trong pool phải dùng đúng tên getter.
 
 ### 3.2. Luật ưu tiên (chống nguồn sự thật thứ hai)
 
@@ -95,6 +95,7 @@ Thứ tự tính cho số nguyên: `floor((base + Σ add) × Π mult)`; số fra
 - Toggle "Số sát thương BẬT/TẮT" (lưu trong biến session, không save — chưa có save system).
 - Focus: đúng một `grab_focus()` khi mở (bài học D-020); đóng bằng ESC hoặc nút Đóng; phím mũi tên/Enter theo pattern `title_screen.gd`.
 - Headless-safe: driver harness không bao giờ mở panel ⇒ không treo `await physics_frame`.
+- Hàng wave, `buff_seed` và toggle "Số sát thương" **được giao cùng T-030/T-031**, không thuộc T-029 (sheet T-029 chỉ hiển thị các chỉ số đã có nguồn).
 
 ## 6. Buff sau wave (T-030)
 
@@ -104,18 +105,19 @@ Base: chu kỳ 17 tick (4+3+10), damage 10, HP 100, reach 1.4 m, combo 3/10, m�
 
 | id | Tên | Lợi | Đổi lại |
 |---|---|---|---|
-| `heavy_edge` | Rìu Sét | `damage_mult 1.3` (10→13) | `recovery_add +3` (17→20 tick) |
-| `quick_rhythm` | Nhịp Gọn | `recovery_add −3`, `combo_window_add +4` | `damage_mult 0.9` (→9), `fatigue_free_add −1` |
-| `root_armor` | Giáp Rễ | `max_hp_add +40` | `move_speed_mult 0.88` |
-| `slow_breath` | Nhịp Thở | `fatigue_free_add +2`, `fatigue_decay_add −2` (6→4) | `recovery_add +2` (→19 tick) |
-| `long_reach` | Tầm Với | `reach_add +0.4` (→1.8 m) | `startup_add +2` (4→6) |
-| `fourth_hook` | Lưỡi Hái | `combo_hits_add +1` (3→4) | `combo_window_add −4` (10→6) |
+| `heavy_edge` | Rìu Sét | `light_damage_mult 1.3` (10→13) | `light_recovery_frames_add +3` (17→20 tick) |
+| `quick_rhythm` | Nhịp Gọn | `light_recovery_frames_add −3`, `combo_window_frames_add +4` | `light_damage_mult 0.9` (→9), `fatigue_free_swings_add −1` |
+| `root_armor` | Giáp Rễ | `player_max_hp_add +40` | `player_move_speed_mult 0.88` |
+| `slow_breath` | Nhịp Thở | `fatigue_free_swings_add +2`, `fatigue_decay_frames_add −2` (6→4) | `light_recovery_frames_add +2` (→19 tick) |
+| `long_reach` | Tầm Với | `light_reach_add +0.4` (→1.8 m) | `light_startup_frames_add +2` (4→6) |
+| `fourth_hook` | Lưỡi Hái | `light_combo_hits_add +1` (3→4) | `combo_window_frames_add −4` (10→6) |
 
 **Luật bắt buộc giữ (test):** sau MỌI tổ hợp buff khả dĩ, `fatigue_decay < fatigue_max` (luật D-019) và mọi frame/cap ≥1. Nhịp Thở là món duy nhất chạm decay; nó kéo decay xuống 4 nên luật càng chặt hơn.
 
 ### 6.2. `BuffKernel` — `scripts/phase_d/buff_kernel.gd` (RefCounted thuần)
 
 - `BuffKernel.new(pool, seed)`; `offer() -> Array` (đúng 3, loại món đã chọn, shuffle bằng RNG seed); `take(id)`; `picked_ids()`; `reset()`.
+- **Bắt buộc:** T-030 phải ship một test chứng minh **mọi op trong pool di chuyển đúng stat của nó** — `add_modifier` rồi đọc getter tương ứng (op sai tên bị `PlayerStats._value()` bỏ qua im lặng, nên không test thì buff sẽ no-op mà không ai thấy).
 - Cùng seed ⇒ cùng thứ tự 3 món (test bắt buộc; không nới assertion để lấy xanh).
 - Game lấy seed ngẫu nhiên lúc run bắt đầu và **ghi `buff_seed` vào combat log** ⇒ mọi run thật tái lập được.
 
@@ -166,6 +168,6 @@ player_died(): FIGHTING/PAUSED -> LOST (BUFF_PENDING không thể, world paused)
 
 ## 10. Xác nhận của user (điền khi duyệt)
 
-- [ ] Spec này được duyệt nguyên trạng, hay sửa phần nào?
-- [ ] Thứ tự task T-029 → T-031 → T-030 OK?
+- [x] Spec này được duyệt nguyên trạng, hay sửa phần nào? — **APPROVED** (2026-11-21); font đổi sang VT323 sau khi gate coverage loại m5x7.
+- [x] Thứ tự task T-029 → T-031 → T-030 OK? — **OK** (2026-11-21).
 - [x] Cho phép tải `vt323.ttf` (SIL OFL 1.1) từ Google Fonts và ghi ASSET_LOG? — user chọn "đổi sang font pixel khác có đủ dấu" (chat, 2026-11-21)

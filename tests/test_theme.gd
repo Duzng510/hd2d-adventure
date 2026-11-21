@@ -10,6 +10,14 @@ func _initialize() -> void:
 	var theme := Hd2dTheme.build()
 	_check(theme != null, "theme builds")
 	_check(theme.default_font != null, "theme carries the pixel font")
+	var font := theme.default_font as FontFile
+	_check(font != null, "the theme font is the imported FontFile resource")
+	if font != null:
+		_check(font.antialiasing == TextServer.FONT_ANTIALIASING_NONE,
+			"font antialiasing is pinned off")
+		_check(font.hinting == TextServer.HINTING_NONE, "font hinting is pinned off")
+		_check(font.subpixel_positioning == TextServer.SUBPIXEL_POSITIONING_DISABLED,
+			"font subpixel positioning is pinned off")
 	# 16 px is VT323's native 8x16 terminal grid; every size must stay on it.
 	_check(theme.default_font_size % 16 == 0, "font size is a multiple of the 16 px glyph cell")
 	_check(Hd2dTheme.TITLE_FONT_SIZE % 16 == 0, "title size is a multiple of the 16 px glyph cell")
