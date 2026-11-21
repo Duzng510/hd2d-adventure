@@ -54,7 +54,7 @@ func clear_modifiers() -> void
 func active_modifiers() -> Array[Dictionary]  # cho sheet: [{source, ops}]
 ```
 
-Thứ tự tính cho số nguyên: `floor((base + Σ add) × Π mult)`; số frame kẹp ≥1. `add_modifier` với cùng `source` thay thế modifier cũ (idempotent). Khóa op là **đúng tên getter + hậu tố `_add` / `_mult`** (`light_reach_add`, `player_move_speed_mult`, `fatigue_free_swings_add`, …); `PlayerStats._value()` không hiểu khóa lạ và bỏ qua im lặng, nên mọi op trong pool phải dùng đúng tên getter.
+Thứ tự tính cho số nguyên: `floor((base + Σ add) × Π mult)`; số frame kẹp ≥1. `add_modifier` với cùng `source` thay thế modifier cũ (idempotent). Khóa op là **khóa stat của kernel + hậu tố `_add` / `_mult`**: đúng tên getter, riêng `move_speed()` dùng khóa `player_move_speed` (`player_move_speed_mult`), các getter còn lại giữ nguyên tên (`light_reach_add`, `fatigue_free_swings_add`, …); `PlayerStats._value()` không hiểu khóa lạ và bỏ qua im lặng, nên mọi op trong pool phải dùng đúng khóa stat.
 
 ### 3.2. Luật ưu tiên (chống nguồn sự thật thứ hai)
 
