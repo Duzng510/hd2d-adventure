@@ -93,7 +93,8 @@ func _run() -> void:
 	_check(_picks_total == TARGET_RUNS * PICKS_PER_RUN,
 		"T30.1 picks==20 (picks=%d)" % _picks_total)
 	_check(_mods_ok and _runs_ok,
-		"T30.2 mods_ok: exactly 2 active modifiers before each reset (%s)" % str(_mods_ok))
+		"T30.2 mods_ok: exactly 2 active modifiers before each reset (mods_ok=%s runs_ok=%s)"
+		% [str(_mods_ok), str(_runs_ok)])
 	var expected := 0 if _negative else 20
 	_check(_picks_total == expected,
 		"T30.3 picks_total == %d%s (got %d)" % [expected, " on -- negative" if _negative else "", _picks_total])
