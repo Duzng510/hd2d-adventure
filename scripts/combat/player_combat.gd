@@ -18,6 +18,7 @@ const ENEMY_HURTBOX_MASK := 32
 @export var aim_override_point := Vector3.ZERO
 
 var health: Health
+var stats: PlayerStats
 
 var _player: PlayerController
 var _director: CombatDirector
@@ -51,22 +52,25 @@ func _ready() -> void:
 	_hitbox_shape = get_node(hitbox_shape_path)
 	_swing = get_node_or_null(swing_visual_path)
 	_sprite = get_node_or_null(sprite_path)
-	health = Health.new(tuning.player_max_hp)
+	stats = PlayerStats.new(tuning)
+	health = Health.new(stats.player_max_hp())
 	_attack = AttackState.new(
-		tuning.light_startup_frames,
-		tuning.light_active_frames,
-		tuning.light_recovery_frames,
-		tuning.combo_window_frames,
-		tuning.light_combo_hits
+		stats.light_startup_frames(),
+		stats.light_active_frames(),
+		stats.light_recovery_frames(),
+		stats.combo_window_frames(),
+		stats.light_combo_hits()
 	)
 	_buffer = InputBuffer.new(tuning.input_buffer_frames)
-	_dodge = DodgeState.new(tuning.dodge_total_frames, tuning.dodge_iframe_frames)
+	_dodge = DodgeState.new(stats.dodge_total_frames(), stats.dodge_iframe_frames())
 	_tempo = TempoFatigue.new(
-		tuning.fatigue_free_swings,
-		tuning.fatigue_step_frames,
-		tuning.fatigue_max_frames,
-		tuning.fatigue_decay_frames
+		stats.fatigue_free_swings(),
+		stats.fatigue_step_frames(),
+		stats.fatigue_max_frames(),
+		stats.fatigue_decay_frames()
 	)
+	stats.changed.connect(_apply_stats)
+	_apply_stats()
 	_hitbox.monitoring = false
 	if _swing != null:
 		_swing.visible = false
@@ -151,6 +155,11 @@ func _start_attack(combo_index: int) -> void:
 	var fatigue := _tempo.frames()
 	_tempo.swing()
 	_swing_id += 1
+	_attack.startup_frames = stats.light_startup_frames()
+	_attack.active_frames = stats.light_active_frames()
+	_attack.recovery_frames = stats.light_recovery_frames()
+	_attack.combo_window_frames = stats.combo_window_frames()
+	_attack.max_combo_hits = stats.light_combo_hits()
 	_attack.start(combo_index, fatigue)
 	_attack_dir = _aim_direction()
 	_player.facing = 1 if _attack_dir.x >= 0.0 else -1
@@ -207,7 +216,7 @@ func _resolve_hits() -> void:
 			continue
 		var applied := 0
 		if receiver.has_method(&"apply_hit"):
-			applied = int(receiver.call(&"apply_hit", tuning.light_damage))
+			applied = int(receiver.call(&"apply_hit", stats.light_damage()))
 		_director.log_event(&"player", &"hit", _swing_id, target_id)
 		_director.log_event(&"player", &"damage", _swing_id, target_id, applied)
 		_director.request_hitstop(tuning.hitstop_frames)
@@ -236,13 +245,13 @@ func _start_dodge() -> void:
 	else:
 		_dodge_dir = Vector3(float(_player.facing), 0.0, 0.0)
 	_director.log_event(&"player", &"action_start", 0)
-	_set_locked(true, _dodge_dir * tuning.dodge_speed)
+	_set_locked(true, _dodge_dir * stats.dodge_speed())
 
 
 func _tick_dodge() -> void:
 	_dodge.tick()
 	if _dodge.is_active():
-		_set_locked(true, _dodge_dir * tuning.dodge_speed)
+		_set_locked(true, _dodge_dir * stats.dodge_speed())
 	else:
 		_set_locked(false, Vector3.ZERO)
 
@@ -305,6 +314,17 @@ func is_dead() -> bool:
 
 func hp() -> int:
 	return health.hp
+
+
+## Push effective stats into the live objects. Windows change on the next
+## swing (spec §3.3); max HP grows with a matching heal.
+func _apply_stats() -> void:
+	var previous_max := health.max_hp
+	health.max_hp = stats.player_max_hp()
+	if health.max_hp > previous_max:
+		health.heal(health.max_hp - previous_max)
+	if _player != null:
+		_player.speed = stats.move_speed()
 
 
 func apply_hit(amount: int) -> int:

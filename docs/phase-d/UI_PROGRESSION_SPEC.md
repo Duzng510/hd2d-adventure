@@ -72,7 +72,7 @@ Thứ tự tính cho số nguyên: `floor((base + Σ add) × Π mult)`; số fra
 | `player_combat.gd:_start_attack` (150) | trước `_attack.start()`, ghi `startup/active/recovery/combo_window/combo_hits` từ stats vào `AttackState` (biến public sẵn có) — buff "có hiệu lực ở đòn kế tiếp" |
 | `player_combat.gd` chỗ dùng `tuning.light_reach` / `tuning.dodge_speed` | đọc `stats.light_reach()` / `stats.dodge_speed()`; `DodgeState` dựng từ stats (pool hiện không có buff dodge nên giá trị không đổi trong run, nhưng luật nguồn phải giữ) |
 | `player_combat.gd` reset | `stats.clear_modifiers()` trong `reset_run()`/R |
-| `player_controller.gd:27` | `MovementModel.compute_velocity(input, stats.move_speed())` |
+| `player_combat.gd:_apply_stats` | đẩy `_player.speed = stats.move_speed()` (PlayerCombat đã là nơi ghi trạng thái player: facing, lock, override); controller không đọc stats để tránh đường đọc thứ hai |
 
 **Bất biến:** buff chỉ được áp dụng khi `_attack` ở phase NONE và world không chạy đòn nào (thực tế chỉ xảy ra ở `BUFF_PENDING`/paused) ⇒ không bao giờ đổi cửa sổ active của đòn đang bay.
 

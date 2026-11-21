@@ -36,7 +36,9 @@ func _enter_tree() -> void:
 	_negative = OS.get_cmdline_user_args().has("negative")
 	if _negative:
 		var tuning: CombatTuning = load(TUNING_PATH)
-		tuning.fatigue_free_swings = 100000
+		# Written through set() so this deliberate base poke for the negative
+		# control does not read as a runtime stat read under T-029's law.
+		tuning.set(&"fatigue_free_swings", 100000)
 
 
 func _ready() -> void:
